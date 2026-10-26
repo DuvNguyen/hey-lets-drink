@@ -655,15 +655,6 @@ function setupEventHandlers() {
     }
   });
 
-  // Sound Preview (Web Audio API Synthesizer)
-  const btnPreviewSound = document.getElementById('btn-preview-sound');
-  const soundSelect = document.getElementById('setting-sound');
-  if (btnPreviewSound && soundSelect) {
-    btnPreviewSound.addEventListener('click', () => {
-      playTone(soundSelect.value);
-    });
-  }
-
   // Save Notification Settings
   const btnSaveSettings = document.getElementById('btn-save-settings');
   const densitySelect = document.getElementById('setting-density');
@@ -677,7 +668,6 @@ function setupEventHandlers() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sound: soundSelect ? soundSelect.value : 'chime',
             density: densitySelect ? densitySelect.value : 'double',
             vibration: vibrationSelect ? vibrationSelect.value : 'standard'
           })
@@ -695,50 +685,6 @@ function setupEventHandlers() {
         btnSaveSettings.disabled = false;
       }
     });
-  }
-}
-
-// Web Audio API Synthesizer Chimes
-function playTone(type) {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    if (type === 'bell') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
-      osc.start();
-      osc.stop(ctx.currentTime + 1.2);
-    } else if (type === 'ping') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(1046.5, ctx.currentTime);
-      gain.gain.setValueAtTime(0.4, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.6);
-    } else if (type === 'alert') {
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(750, ctx.currentTime);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.4);
-    } else {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.3);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.9);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.9);
-    }
-  } catch (e) {
-    console.warn('AudioContext not allowed or supported', e);
   }
 }
 

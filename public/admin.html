@@ -216,8 +216,41 @@
       <div class="form-group" style="margin-bottom: 12px;">
         <label class="form-label" for="anki-max-duration">Dừng nhắc sau bao nhiêu phút (Tránh làm phiền khi ngủ)</label>
         <div style="display: flex; gap: 8px; align-items: center;">
-          <input type="number" id="anki-max-duration" class="form-input" style="width: 100px;" value="45" min="15" max="120">
+          <input type="number" id="anki-max-duration" class="form-input" style="width: 100px;" value="50" min="15" max="120">
           <span style="font-size: 13px; color: var(--text-muted);">phút kể từ giờ cữ thuốc</span>
+        </div>
+      </div>
+
+      <!-- Phase Message Customization -->
+      <div style="margin: 14px 0 16px; padding: 12px; background: var(--surface-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+        <div style="font-weight: 600; font-size: 13px; color: var(--text-heading); margin-bottom: 10px;">Lời Nhắn Riêng Cho Từng Chặng</div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label class="form-label" for="anki-msg-stage1" style="font-size: 12px; color: var(--text-body);">
+            Chặng 1 (Quá 10 phút):
+          </label>
+          <input type="text" id="anki-msg-stage1" class="form-input" placeholder="Quá giờ 10p rồi, em mau uống thuốc nha!">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label class="form-label" for="anki-msg-stage2" style="font-size: 12px; color: var(--text-body);">
+            Chặng 2 (Quá 15 phút):
+          </label>
+          <input type="text" id="anki-msg-stage2" class="form-input" placeholder="Em ơi, quá 15p rồi chưa uống thuốc nè!">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label class="form-label" for="anki-msg-stage3" style="font-size: 12px; color: var(--text-body);">
+            Chặng 3 (Quá 17 phút):
+          </label>
+          <input type="text" id="anki-msg-stage3" class="form-input" placeholder="Uống thuốc ngay nha em, trễ nhiều rồi đó!">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="anki-msg-stage4" style="font-size: 12px; color: #DC2626; font-weight: 600;">
+            Khẩn cấp (Từ 18 phút - 1 lần/phút):
+          </label>
+          <input type="text" id="anki-msg-stage4" class="form-input" placeholder="Khẩn cấp: Mau uống thuốc rồi bấm xác nhận cho anh!">
         </div>
       </div>
 
@@ -270,6 +303,10 @@
     const ankiToggle = document.getElementById('anki-toggle');
     const ankiMaxDuration = document.getElementById('anki-max-duration');
     const btnSaveAnki = document.getElementById('btn-save-anki');
+    const ankiMsgStage1 = document.getElementById('anki-msg-stage1');
+    const ankiMsgStage2 = document.getElementById('anki-msg-stage2');
+    const ankiMsgStage3 = document.getElementById('anki-msg-stage3');
+    const ankiMsgStage4 = document.getElementById('anki-msg-stage4');
     const nudgeTextInput = document.getElementById('nudge-text');
     const btnSendNudge = document.getElementById('btn-send-nudge');
     const quickPills = document.querySelectorAll('.quick-pill');
@@ -310,7 +347,11 @@
         // Render Anki settings
         if (data.escalation) {
           ankiToggle.checked = !!data.escalation.enabled;
-          ankiMaxDuration.value = data.escalation.maxDuration || 45;
+          ankiMaxDuration.value = data.escalation.maxDuration || 50;
+          ankiMsgStage1.value = data.escalation.stage1Message || 'Quá giờ 10p rồi, em mau uống thuốc nha!';
+          ankiMsgStage2.value = data.escalation.stage2Message || 'Em ơi, quá 15p rồi chưa uống thuốc nè!';
+          ankiMsgStage3.value = data.escalation.stage3Message || 'Uống thuốc ngay nha em, trễ nhiều rồi đó!';
+          ankiMsgStage4.value = data.escalation.stage4Message || 'Khẩn cấp: Mau uống thuốc rồi bấm xác nhận cho anh!';
         }
 
         // Render Today Meds
@@ -359,7 +400,11 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               enabled: ankiToggle.checked,
-              maxDuration: Number(ankiMaxDuration.value) || 45
+              maxDuration: Number(ankiMaxDuration.value) || 50,
+              stage1Message: ankiMsgStage1.value.trim(),
+              stage2Message: ankiMsgStage2.value.trim(),
+              stage3Message: ankiMsgStage3.value.trim(),
+              stage4Message: ankiMsgStage4.value.trim()
             })
           });
           if (res.ok) {

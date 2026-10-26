@@ -19,8 +19,12 @@ const defaultSettings = {
 const defaultEscalation = {
   enabled: true,
   startInterval: 10,
-  maxDuration: 45,
-  customNudgeText: 'Anh nhắc em nè: mau uống thuốc đúng cữ nha!'
+  maxDuration: 50,
+  customNudgeText: 'Anh nhắc em nè: mau uống thuốc đúng cữ nha!',
+  stage1Message: 'Quá giờ 10p rồi, em mau uống thuốc nha!',
+  stage2Message: 'Em ơi, quá 15p rồi chưa uống thuốc nè!',
+  stage3Message: 'Uống thuốc ngay nha em, trễ nhiều rồi đó!',
+  stage4Message: 'Khẩn cấp: Mau uống thuốc rồi bấm xác nhận cho anh!'
 };
 
 const defaultMeds = [

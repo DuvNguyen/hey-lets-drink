@@ -138,52 +138,57 @@ async function checkAndSendReminders() {
     const diffMinutes = currentMinutes - medMinutes;
 
     let shouldTrigger = false;
-    let reminderPrefix = '';
+    let reminderTitle = `Lịch uống thuốc: ${med.name}`;
+    let reminderBody = `Cữ ${med.time} (${med.dosage}). Vui lòng uống thuốc và nhấn Xác nhận đã uống.`;
 
     // 1. On-time check (diff = 0m)
     if (diffMinutes === 0) {
       shouldTrigger = true;
     }
     // 2. Anki Escalation Mode: Faster reminders down to 1 per minute!
-    else if (escalation.enabled && diffMinutes > 0 && diffMinutes <= (escalation.maxDuration || 45)) {
+    else if (escalation.enabled && diffMinutes > 0 && diffMinutes <= (escalation.maxDuration || 50)) {
       if (diffMinutes === 10) {
         // Stage 1: 10 minutes overdue
         shouldTrigger = true;
-        reminderPrefix = '⏰ [Quá giờ 10p] ';
+        reminderTitle = `[Quá giờ 10p] ${med.name}`;
+        reminderBody = `${escalation.stage1Message || 'Quá giờ 10p rồi, em mau uống thuốc nha!'} (Cữ ${med.time})`;
       } else if (diffMinutes === 15) {
         // Stage 2: 5 minutes later
         shouldTrigger = true;
-        reminderPrefix = '⚠️ [Quá giờ 15p - Nhắc lần 2] ';
+        reminderTitle = `[Quá giờ 15p] ${med.name}`;
+        reminderBody = `${escalation.stage2Message || 'Em ơi, quá 15p rồi chưa uống thuốc nè!'} (Cữ ${med.time})`;
       } else if (diffMinutes === 17) {
         // Stage 3: 2 minutes later
         shouldTrigger = true;
-        reminderPrefix = '🚨 [Quá giờ 17p - Uống ngay] ';
+        reminderTitle = `[Quá giờ 17p] ${med.name}`;
+        reminderBody = `${escalation.stage3Message || 'Uống thuốc ngay nha em, trễ nhiều rồi đó!'} (Cữ ${med.time})`;
         vibration = [300, 100, 300, 100, 300];
       } else if (diffMinutes >= 18) {
         // Stage 4: High urgency -> Fires EVERY 1 MINUTE until marked done!
         shouldTrigger = true;
-        reminderPrefix = `🔥 [Khẩn cấp: Quá giờ ${diffMinutes}p] `;
+        reminderTitle = `[Khẩn cấp: Quá giờ ${diffMinutes}p] ${med.name}`;
+        reminderBody = `${escalation.stage4Message || 'Khẩn cấp: Mau uống thuốc rồi bấm xác nhận cho anh!'} (Cữ ${med.time})`;
         vibration = [400, 100, 400, 100, 400, 100, 500];
       }
     }
     // 3. Fallback density if Anki escalation is disabled
     else if (!escalation.enabled && settings.density === 'double' && diffMinutes === 10) {
       shouldTrigger = true;
-      reminderPrefix = '[Nhắc lại] ';
+      reminderTitle = `[Nhắc lại] Lịch uống thuốc: ${med.name}`;
+      reminderBody = `Đã qua giờ cữ ${med.time} (${med.dosage}). Vui lòng uống thuốc.`;
     }
 
     if (shouldTrigger) {
-      console.log(`[Reminder Triggered] ${reminderPrefix}${med.name} at ${currentTime} (Overdue: ${diffMinutes}m)`);
+      console.log(`[Reminder Triggered] ${reminderTitle} at ${currentTime} (Overdue: ${diffMinutes}m)`);
       await broadcastPush({
-        title: `${reminderPrefix}Lịch uống thuốc: ${med.name}`,
-        body: `Cữ ${med.time} (${med.dosage}). Vui lòng uống thuốc và nhấn Xác nhận đã uống.`,
+        title: reminderTitle,
+        body: reminderBody,
         tag: `med-${med.id}-${today}`,
         vibrate: vibration,
         data: {
           medicationId: med.id,
           time: med.time,
           date: today,
-          sound: settings.sound,
           vibrate: vibration,
           url: '/'
         }
