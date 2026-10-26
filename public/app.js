@@ -60,6 +60,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupVoiceRecognition();
   setupEventHandlers();
   initNeonRealtime();
+
+  const streakBackdrop = document.getElementById('streak-celebration-backdrop');
+  if (streakBackdrop) {
+    streakBackdrop.addEventListener('click', (e) => {
+      if (e.target === streakBackdrop) closeStreakModal();
+    });
+  }
 });
 
 // Helper: Convert Base64 URL to Uint8Array for VAPID key
@@ -283,186 +290,19 @@ async function loadMedications() {
 // Tier 2 (10-19d): Lửa Cam Bùng Cháy + Ribbon
 // Tier 3 (20d+): Lửa Tím Huyền Thoại (Exact from TikTok screenshot) + Ribbon
 // ----------------------------------------------------
-function getTikTokStreakBadgeSvg(count, tier) {
-  let flameGradStops = '';
-  let ribbonGradStops = '';
-  let tailColor = '';
-  let foldColor = '';
-  let textStroke = '';
-  let sparkColor1 = '';
-  let sparkColor2 = '';
-
-  if (tier === 3) {
-    // Purple Flame (20+ days) - directly from user TikTok screenshot
-    flameGradStops = `
-      <stop offset="0%" stop-color="#9333EA"/>
-      <stop offset="35%" stop-color="#A855F7"/>
-      <stop offset="70%" stop-color="#C084FC"/>
-      <stop offset="100%" stop-color="#F472B6"/>
-    `;
-    ribbonGradStops = `
-      <stop offset="0%" stop-color="#C084FC"/>
-      <stop offset="50%" stop-color="#E879F9"/>
-      <stop offset="100%" stop-color="#A855F7"/>
-    `;
-    tailColor = '#7E22CE';
-    foldColor = '#581C87';
-    textStroke = '#7E22CE';
-    sparkColor1 = '#F5D0FE';
-    sparkColor2 = '#E879F9';
-  } else if (tier === 2) {
-    // Orange Flame (10 - 19 days)
-    flameGradStops = `
-      <stop offset="0%" stop-color="#FF2A38"/>
-      <stop offset="35%" stop-color="#FF5A00"/>
-      <stop offset="70%" stop-color="#FF8A00"/>
-      <stop offset="100%" stop-color="#FFB800"/>
-    `;
-    ribbonGradStops = `
-      <stop offset="0%" stop-color="#FF7A00"/>
-      <stop offset="50%" stop-color="#FFA200"/>
-      <stop offset="100%" stop-color="#FF3D00"/>
-    `;
-    tailColor = '#C2410C';
-    foldColor = '#9A3412';
-    textStroke = '#C2410C';
-    sparkColor1 = '#FFE57F';
-    sparkColor2 = '#FFD54F';
-  } else {
-    // Yellow Flame (3 - 9 days)
-    flameGradStops = `
-      <stop offset="0%" stop-color="#FFE600"/>
-      <stop offset="45%" stop-color="#FFA000"/>
-      <stop offset="100%" stop-color="#FF5722"/>
-    `;
-    ribbonGradStops = `
-      <stop offset="0%" stop-color="#FBBF24"/>
-      <stop offset="50%" stop-color="#FDE047"/>
-      <stop offset="100%" stop-color="#F59E0B"/>
-    `;
-    tailColor = '#D97706';
-    foldColor = '#B45309';
-    textStroke = '#B45309';
-    sparkColor1 = '#FEF08A';
-    sparkColor2 = '#FDE047';
-  }
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 95" width="100%" height="100%" fill="none">
-    <defs>
-      <linearGradient id="flameGrad_${tier}" x1="50%" y1="0%" x2="50%" y2="100%">
-        ${flameGradStops}
-      </linearGradient>
-      <linearGradient id="ribbonGrad_${tier}" x1="0%" y1="0%" x2="100%" y2="100%">
-        ${ribbonGradStops}
-      </linearGradient>
-      <linearGradient id="coreGrad_${tier}" x1="50%" y1="0%" x2="50%" y2="100%">
-        <stop offset="0%" stop-color="#FFFFFF"/>
-        <stop offset="60%" stop-color="#FFFFFF" stop-opacity="0.95"/>
-        <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
-      </linearGradient>
-      <filter id="badgeGlow_${tier}" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="${textStroke}" flood-opacity="0.5"/>
-      </filter>
-    </defs>
-
-    <!-- Main Crown Flame (matched to TikTok screenshot) -->
-    <g filter="url(#badgeGlow_${tier})">
-      <path d="M50 78
-               C32 78 20 68 19 56
-               C18 47 23 41 19 36
-               C18 35 17 36 18 38
-               C20 43 20 49 24 47
-               C19 41 19 34 23 27
-               C24 25 23 25 22 27
-               C21 31 22 36 26 34
-               C24 27 27 20 33 13
-               C34 11 33 11 32 13
-               C31 17 32 22 38 20
-               C35 13 40 7 48 2
-               C49 1 50 2.5 49 4.5
-               C46 10 45 17 53 17
-               C50 11 56 5 65 5
-               C66 5 67 7 66 9
-               C62 14 63 21 70 19
-               C68 13 73 10 80 13
-               C81 14 80 15 79 15
-               C74 19 74 24 81 25
-               C79 21 83 20 89 25
-               C90 26 89 27 88 27
-               C83 31 84 37 91 35
-               C88 40 89 45 92 45
-               C93 45 93 43 92 41
-               C91 39 94 36 92 32
-               C91 43 93 52 91 57
-               C89 70 78 78 50 78 Z"
-            fill="url(#flameGrad_${tier})"/>
-
-      <!-- Inner Water-Drop Core Light -->
-      <path d="M50 36
-               C50 36 39 50 39 59
-               C39 66 44 71 50 71
-               C56 71 61 66 61 59
-               C61 50 50 36 50 36 Z"
-            fill="url(#coreGrad_${tier})" opacity="0.85"/>
-    </g>
-
-    <!-- TikTok Diamond Sparkles -->
-    <path d="M88 36 Q91 36 91 33 Q91 36 94 36 Q91 36 91 39 Q91 36 88 36 Z" fill="${sparkColor1}"/>
-    <path d="M10 52 Q12 52 12 50 Q12 52 14 52 Q12 52 12 54 Q12 52 10 52 Z" fill="${sparkColor2}"/>
-
-    <!-- Ribbon Banner (Bottom Layer - Tails) -->
-    <g>
-      <!-- Left Tail -->
-      <path d="M22 66 L6 62 L12 70 L5 78 L22 75 Z" fill="${tailColor}"/>
-      <!-- Left Fold shadow -->
-      <path d="M22 66 L22 75 L17 78 Z" fill="${foldColor}"/>
-
-      <!-- Right Tail -->
-      <path d="M78 66 L94 62 L88 70 L95 78 L78 75 Z" fill="${tailColor}"/>
-      <!-- Right Fold shadow -->
-      <path d="M78 66 L78 75 L83 78 Z" fill="${foldColor}"/>
-
-      <!-- Center Banner Front -->
-      <path d="M16 63
-               C38 58 62 58 84 63
-               L82 79
-               C60 74 40 74 18 79 Z"
-            fill="url(#ribbonGrad_${tier})"
-            stroke="#FFFFFF"
-            stroke-width="1"
-            stroke-opacity="0.5"/>
-
-      <!-- Banner Highlight Line -->
-      <path d="M19 65.5 C40 60.5 60 60.5 81 65.5" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
-    </g>
-
-    <!-- Milestone Number on Ribbon -->
-    <text x="50" y="74.5"
-          text-anchor="middle"
-          dominant-baseline="central"
-          font-family="Inter, -apple-system, sans-serif"
-          font-weight="900"
-          font-size="15"
-          fill="#FFFFFF"
-          stroke="${textStroke}"
-          stroke-width="2.2"
-          paint-order="stroke fill"
-          letter-spacing="-0.02em">${count}</text>
-  </svg>`;
-}
+let currentStreakData = { count: 0, imgSrc: '', label: '', tier: 0 };
 
 function renderStreakFlame(streakDays) {
-  const flameWrap = document.getElementById('hero-streak-flame');
+  const streakImg = document.getElementById('hero-streak-img');
   const streakCount = document.getElementById('hero-total-text');
   const streakSub = document.getElementById('hero-streak-text');
-  if (!flameWrap || !streakCount || !streakSub) return;
+  if (!streakCount || !streakSub) return;
 
   const count = Number(streakDays) || 0;
 
   if (count < 3) {
     // Under 3 days: No flame yet (TikTok rule: streak starts at day 3)
-    flameWrap.style.display = 'none';
-    flameWrap.innerHTML = '';
+    if (streakImg) streakImg.style.display = 'none';
     streakCount.style.display = 'block';
     streakCount.textContent = count;
     streakCount.className = 'metric-value';
@@ -474,28 +314,61 @@ function renderStreakFlame(streakDays) {
     } else if (count === 2) {
       streakSub.textContent = 'Còn 1 ngày để mở 🔥';
     }
+    currentStreakData = { count, imgSrc: '', label: streakSub.textContent, tier: 0 };
     return;
   }
 
   // 3+ days: Official TikTok streak flame is active with Ribbon Banner!
   streakCount.style.display = 'none';
-  flameWrap.style.display = 'inline-flex';
 
   let tier = 1;
+  let imgSrc = '/image/tiktok-streak-3.png';
   let subLabel = `Lửa Vàng · ${count} ngày`;
 
   if (count >= 20) {
     tier = 3;
+    imgSrc = '/image/tiktok-streak-20.png';
     subLabel = `Lửa Tím · ${count} ngày`;
   } else if (count >= 10) {
     tier = 2;
+    imgSrc = '/image/tiktok-streak-10.png';
     subLabel = `Lửa Cam · ${count} ngày`;
   }
 
-  flameWrap.className = `tiktok-streak-badge streak-tier-${tier}`;
-  flameWrap.innerHTML = getTikTokStreakBadgeSvg(count, tier);
+  if (streakImg) {
+    streakImg.src = imgSrc;
+    streakImg.style.display = 'inline-block';
+  }
   streakSub.textContent = subLabel;
+
+  currentStreakData = { count, imgSrc, label: subLabel, tier };
 }
+
+window.openStreakModal = function() {
+  const modal = document.getElementById('streak-celebration-backdrop');
+  const modalImg = document.getElementById('streak-modal-img');
+  const modalPill = document.getElementById('streak-modal-pill-text');
+  const modalHint = document.getElementById('streak-modal-hint');
+  if (!modal) return;
+
+  const count = currentStreakData.count || 0;
+  if (count < 3) {
+    if (modalImg) modalImg.src = '/image/tiktok-streak-3.png';
+    if (modalPill) modalPill.textContent = `${count}/3 ngày mở lửa`;
+    if (modalHint) modalHint.textContent = `Chỉ cần uống thuốc đủ 3 ngày liên tiếp, ngọn lửa TikTok đầu tiên sẽ bùng cháy tặng em! ❤️`;
+  } else {
+    if (modalImg) modalImg.src = currentStreakData.imgSrc || '/image/tiktok-streak-20.png';
+    if (modalPill) modalPill.textContent = `${count} Streak`;
+    if (modalHint) modalHint.textContent = `Đừng để chuỗi 🔥 bị dập tắt! Hãy nhắc em uống thuốc đúng giờ mỗi ngày nha.`;
+  }
+
+  modal.classList.add('open');
+};
+
+window.closeStreakModal = function() {
+  const modal = document.getElementById('streak-celebration-backdrop');
+  if (modal) modal.classList.remove('open');
+};
 
 // Render Tab 1: Today Schedule
 function renderTodayMedications(meds) {

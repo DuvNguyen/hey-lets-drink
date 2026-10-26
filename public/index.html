@@ -56,11 +56,11 @@
               <div id="hero-progress-bar" class="progress-fill" style="width: 0%;"></div>
             </div>
           </div>
-          <div class="metric-col metric-col-streak">
+          <div class="metric-col metric-col-streak" onclick="openStreakModal()" style="cursor: pointer;" title="Chạm để xem cúp chuỗi ngày">
             <span class="metric-label">Chuỗi ngày</span>
             <div class="streak-badge-wrap">
               <span id="hero-total-text" class="metric-value">0</span>
-              <div id="hero-streak-flame" class="tiktok-streak-badge" style="display: none;"></div>
+              <img id="hero-streak-img" class="tiktok-streak-img" src="/image/tiktok-streak-20.png" alt="Streak Flame" style="display: none;" />
             </div>
             <span id="hero-streak-text" class="metric-subtext">Uống 3 ngày để mở 🔥</span>
           </div>
@@ -418,6 +418,36 @@
           <button type="button" id="btn-cancel-edit" class="btn-secondary" style="flex: 1;">Hủy</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- TikTok Streak Milestone Celebration Modal -->
+  <div id="streak-celebration-backdrop" class="streak-celebration-backdrop">
+    <div class="streak-celebration-content">
+      <button type="button" class="streak-btn-close" onclick="closeStreakModal()" aria-label="Đóng">×</button>
+      
+      <!-- Big TikTok Flame Badge from Image -->
+      <div class="streak-big-badge-container">
+        <img id="streak-modal-img" class="streak-modal-flame-img" src="/image/tiktok-streak-20.png" alt="TikTok Streak Flame" />
+      </div>
+
+      <!-- TikTok Streak Pill -->
+      <div class="streak-tiktok-pill">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
+        <span id="streak-modal-pill-text">20 Streak</span>
+      </div>
+
+      <!-- Reminder Copy (like TikTok DM streak) -->
+      <p id="streak-modal-hint" class="streak-modal-hint">
+        Đừng để chuỗi 🔥 bị dập tắt! Hãy nhắc em uống thuốc đúng giờ mỗi ngày nha.
+      </p>
+
+      <!-- Action Button -->
+      <button type="button" class="streak-modal-action-btn" onclick="closeStreakModal()">
+        Tiếp Tục Giữ Chuỗi
+      </button>
     </div>
   </div>
 
