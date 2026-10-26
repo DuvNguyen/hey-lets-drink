@@ -1,0 +1,82 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # -----------------------------------------------
+  # 1. Test & Code Quality Check
+  # -----------------------------------------------
+  test:
+    name: Lint & Smoke Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (v22)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Syntax & Integrity Validation
+        run: |
+          echo "Checking JavaScript syntax..."
+          node --check server.js
+          node --check api/index.js
+          node --check public/app.js
+          node --check public/sw.js
+          echo "Syntax verification passed."
+
+      - name: API Integration Smoke Test
+        env:
+          PORT: 3099
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test-key' }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          echo "Starting test instance on port 3099..."
+          node server.js &
+          SERVER_PID=$!
+          sleep 3
+
+          echo "Verifying API endpoints..."
+          curl --fail -s http://localhost:3099/api/vapid-key > /dev/null || (kill $SERVER_PID && exit 1)
+          curl --fail -s http://localhost:3099/api/medications > /dev/null || (kill $SERVER_PID && exit 1)
+          curl --fail -s http://localhost:3099/api/cron-trigger > /dev/null || (kill $SERVER_PID && exit 1)
+          curl --fail -s http://localhost:3099/manifest.json > /dev/null || (kill $SERVER_PID && exit 1)
+          
+          echo "All API endpoints responded with HTTP 200 OK!"
+          kill $SERVER_PID
+
+  # -----------------------------------------------
+  # 2. Continuous Deployment to Vercel (Optional via Token)
+  # -----------------------------------------------
+  deploy:
+    name: Deploy to Vercel
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Vercel Production
+        if: env.VERCEL_TOKEN != ''
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
