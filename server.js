@@ -424,6 +424,30 @@ app.post('/api/medications', async (req, res) => {
   res.status(201).json(newMed);
 });
 
+// 4.5. Update existing medication
+app.put('/api/medications/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, dosage, time, frequency, daysOfWeek, dayOfMonth } = req.body;
+  if (!name || !time) {
+    return res.status(400).json({ error: 'Name and time are required' });
+  }
+
+  const updates = {
+    name: name.trim(),
+    dosage: (dosage || 'Theo chỉ định').trim(),
+    time: time.trim(),
+    frequency: ['daily', 'weekly', 'monthly'].includes(frequency) ? frequency : 'daily',
+    daysOfWeek: Array.isArray(daysOfWeek) ? daysOfWeek.map(Number) : [],
+    dayOfMonth: dayOfMonth ? Number(dayOfMonth) : null
+  };
+
+  const updated = await db.updateMedication(id, updates);
+  if (!updated) {
+    return res.status(404).json({ error: 'Medication not found' });
+  }
+  res.json({ success: true, medication: updated });
+});
+
 // 5. Delete medication
 app.delete('/api/medications/:id', async (req, res) => {
   const { id } = req.params;

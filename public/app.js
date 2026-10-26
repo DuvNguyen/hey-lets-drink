@@ -42,6 +42,7 @@ const btnSaveAi = document.getElementById('btn-save-ai');
 
 let swRegistration = null;
 let currentAiData = null;
+let currentMedsList = [];
 let recognition = null;
 let isRecording = false;
 
@@ -55,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkSubscriptionStatus();
   await loadMedications();
   setupRecurrencePicker();
+  setupEditModal();
   setupVoiceRecognition();
   setupEventHandlers();
 });
@@ -265,7 +267,8 @@ async function loadMedications() {
     renderTodayMedications(data.todayMedications || []);
 
     // 3. Render All Medications
-    renderAllMedications(data.allMedications || []);
+    currentMedsList = data.allMedications || [];
+    renderAllMedications(currentMedsList);
 
   } catch (err) {
     console.error('Error loading medications:', err);
@@ -328,7 +331,22 @@ function renderAllMedications(meds) {
           </div>
         </div>
         <div class="med-actions">
-          <button class="btn-delete" title="Xóa lịch" onclick="deleteMed('${med.id}')">Xóa</button>
+          <div class="med-actions-row">
+            <button class="btn-action-edit" title="Sửa cữ thuốc" onclick="openEditModal('${med.id}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              <span>Sửa</span>
+            </button>
+            <button class="btn-action-delete" title="Xóa cữ thuốc" onclick="deleteMed('${med.id}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Xóa</span>
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -357,6 +375,136 @@ window.deleteMed = async function(id) {
     console.error('Error deleting dose:', err);
   }
 };
+
+window.openEditModal = function(id) {
+  const med = currentMedsList.find(m => m.id === id);
+  if (!med) return;
+
+  const modal = document.getElementById('edit-modal-backdrop');
+  const editId = document.getElementById('edit-med-id');
+  const editName = document.getElementById('edit-med-name');
+  const editDosage = document.getElementById('edit-med-dosage');
+  const editTime = document.getElementById('edit-med-time');
+  const editFreq = document.getElementById('edit-med-freq');
+  const editWeekly = document.getElementById('edit-weekly-picker');
+  const editMonthly = document.getElementById('edit-monthly-picker');
+  const editMonthDay = document.getElementById('edit-med-month-day');
+  const editDayChips = document.querySelectorAll('.edit-day-chip');
+
+  editId.value = med.id;
+  editName.value = med.name || '';
+  editDosage.value = med.dosage || '';
+  editTime.value = med.time || '';
+  editFreq.value = med.frequency || 'daily';
+
+  // Toggle subpanels
+  editWeekly.style.display = med.frequency === 'weekly' ? 'block' : 'none';
+  editMonthly.style.display = med.frequency === 'monthly' ? 'block' : 'none';
+
+  // Days chips
+  const days = Array.isArray(med.daysOfWeek) ? med.daysOfWeek : [];
+  editDayChips.forEach(chip => {
+    const day = Number(chip.getAttribute('data-day'));
+    if (days.includes(day)) {
+      chip.classList.add('selected');
+    } else {
+      chip.classList.remove('selected');
+    }
+  });
+
+  // Month day
+  editMonthDay.value = med.dayOfMonth || '';
+
+  modal.classList.add('open');
+};
+
+window.closeEditModal = function() {
+  const modal = document.getElementById('edit-modal-backdrop');
+  if (modal) modal.classList.remove('open');
+};
+
+function setupEditModal() {
+  const modal = document.getElementById('edit-modal-backdrop');
+  const btnClose = document.getElementById('btn-close-edit-modal');
+  const btnCancel = document.getElementById('btn-cancel-edit');
+  const editFreq = document.getElementById('edit-med-freq');
+  const editWeekly = document.getElementById('edit-weekly-picker');
+  const editMonthly = document.getElementById('edit-monthly-picker');
+  const editDayChips = document.querySelectorAll('.edit-day-chip');
+  const editForm = document.getElementById('edit-med-form');
+
+  if (btnClose) btnClose.addEventListener('click', closeEditModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeEditModal);
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeEditModal();
+    });
+  }
+
+  if (editFreq) {
+    editFreq.addEventListener('change', () => {
+      const val = editFreq.value;
+      editWeekly.style.display = val === 'weekly' ? 'block' : 'none';
+      editMonthly.style.display = val === 'monthly' ? 'block' : 'none';
+    });
+  }
+
+  editDayChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('selected');
+    });
+  });
+
+  if (editForm) {
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('edit-med-id').value;
+      const name = document.getElementById('edit-med-name').value.trim();
+      const dosage = document.getElementById('edit-med-dosage').value.trim();
+      const time = document.getElementById('edit-med-time').value;
+      const freqVal = editFreq.value;
+      const monthDay = document.getElementById('edit-med-month-day').value;
+
+      const selectedDays = [];
+      editDayChips.forEach(chip => {
+        if (chip.classList.contains('selected')) {
+          selectedDays.push(Number(chip.getAttribute('data-day')));
+        }
+      });
+
+      const btnSubmit = document.getElementById('btn-submit-edit');
+      btnSubmit.disabled = true;
+
+      try {
+        const res = await fetch(`/api/medications/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            dosage,
+            time,
+            frequency: freqVal,
+            daysOfWeek: freqVal === 'weekly' ? selectedDays : [],
+            dayOfMonth: freqVal === 'monthly' ? Number(monthDay) : null
+          })
+        });
+
+        if (res.ok) {
+          closeEditModal();
+          await loadMedications();
+        } else {
+          const err = await res.json();
+          alert('Lỗi cập nhật: ' + (err.error || 'Vui lòng kiểm tra lại'));
+        }
+      } catch (err) {
+        console.error('Error updating medication:', err);
+        alert('Lỗi kết nối: ' + err.message);
+      } finally {
+        btnSubmit.disabled = false;
+      }
+    });
+  }
+}
 
 // ----------------------------------------------------
 // Google Calendar Recurrence Picker Logic

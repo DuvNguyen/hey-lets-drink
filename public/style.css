@@ -991,6 +991,116 @@ input[type="time"] {
   transform: scale(0.97);
 }
 
+/* Action Buttons (Edit / Delete) */
+.med-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-action-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--sd-blue);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-standard);
+  min-height: 34px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-action-edit:hover {
+  background: #EBF0FE;
+  border-color: #CBD5E1;
+}
+
+.btn-action-edit:active {
+  transform: scale(0.96);
+}
+
+.btn-action-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 8px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-standard);
+  min-height: 34px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-action-delete:hover {
+  color: #DC2626;
+  background: #FEF2F2;
+  border-color: #FECACA;
+}
+
+.btn-action-delete:active {
+  transform: scale(0.96);
+}
+
+/* Modal Bottom Sheet (Edit Medication) */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-standard);
+}
+
+.modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bottom-sheet {
+  background: var(--surface-card);
+  width: 100%;
+  max-width: 480px;
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+  padding: 14px 18px calc(env(safe-area-inset-bottom, 20px) + 24px);
+  box-shadow: var(--shadow-md);
+  transform: translateY(100%);
+  transition: transform var(--dur-base) var(--ease-out);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-backdrop.open .bottom-sheet {
+  transform: translateY(0);
+}
+
+.bottom-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: #CBD5E1;
+  border-radius: var(--radius-pill);
+  margin: 0 auto 12px;
+}
+
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

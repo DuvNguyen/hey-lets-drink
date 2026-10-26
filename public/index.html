@@ -278,6 +278,78 @@
     </main>
   </div>
 
+  <!-- Edit Medication Bottom Sheet Modal -->
+  <div id="edit-modal-backdrop" class="modal-backdrop">
+    <div class="bottom-sheet">
+      <div class="bottom-sheet-handle"></div>
+      <div class="section-header" style="margin-bottom: 14px;">
+        <span class="section-title">Chỉnh Sửa Cữ Thuốc</span>
+        <button type="button" id="btn-close-edit-modal" class="btn-secondary" style="padding: 4px 10px; font-size: 12px;">✕ Đóng</button>
+      </div>
+
+      <form id="edit-med-form">
+        <input type="hidden" id="edit-med-id">
+
+        <div class="form-group">
+          <label class="form-label" for="edit-med-name">Tên thuốc</label>
+          <input type="text" id="edit-med-name" class="form-input" required placeholder="Ví dụ: Panadol Extra, Viên sắt...">
+        </div>
+
+        <div class="form-row">
+          <div class="col-dosage">
+            <label class="form-label" for="edit-med-dosage">Liều dùng</label>
+            <input type="text" id="edit-med-dosage" class="form-input" placeholder="Ví dụ: 1 viên sau ăn">
+          </div>
+          <div class="col-time">
+            <label class="form-label" for="edit-med-time">Giờ nhắc</label>
+            <input type="time" id="edit-med-time" class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="edit-med-freq">Tần suất lặp lại</label>
+          <select id="edit-med-freq" class="form-select">
+            <option value="daily">Hàng ngày (Daily)</option>
+            <option value="weekly">Theo thứ trong tuần (Weekly)</option>
+            <option value="monthly">Theo ngày trong tháng (Monthly)</option>
+          </select>
+        </div>
+
+        <!-- Weekly Recurrence Picker -->
+        <div id="edit-weekly-picker" class="recurrence-subpanel" style="display: none;">
+          <label class="form-label">Chọn các ngày uống:</label>
+          <div class="day-chip-group">
+            <button type="button" class="day-chip edit-day-chip" data-day="1">T2</button>
+            <button type="button" class="day-chip edit-day-chip" data-day="2">T3</button>
+            <button type="button" class="day-chip edit-day-chip" data-day="3">T4</button>
+            <button type="button" class="day-chip edit-day-chip" data-day="4">T5</button>
+            <button type="button" class="day-chip edit-day-chip" data-day="5">T6</button>
+            <button type="button" class="day-chip edit-day-chip" data-day="6">T7</button>
+            <button type="button" class="day-chip edit-day-chip" data-day="7">CN</button>
+          </div>
+        </div>
+
+        <!-- Monthly Recurrence Picker -->
+        <div id="edit-monthly-picker" class="recurrence-subpanel" style="display: none;">
+          <label class="form-label" for="edit-med-month-day">Ngày trong tháng (1 - 31):</label>
+          <input type="number" id="edit-med-month-day" class="form-input" min="1" max="31" placeholder="Ví dụ: 15">
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button type="submit" id="btn-submit-edit" class="btn-primary" style="flex: 2;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span>Lưu Thay Đổi</span>
+          </button>
+          <button type="button" id="btn-cancel-edit" class="btn-secondary" style="flex: 1;">Hủy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="/app.js"></script>
 </body>
 </html>
