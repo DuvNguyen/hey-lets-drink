@@ -27,26 +27,37 @@
       </div>
     </header>
 
-    <!-- BVIS Concept 3-Column Hero Metric Card -->
-    <section class="hero-metric-card">
-      <div class="metric-col">
-        <span class="metric-label">Đã Uống Hôm Nay</span>
-        <span id="hero-progress-text" class="metric-value">0/0</span>
-        <div class="progress-track">
-          <div id="hero-progress-bar" class="progress-fill" style="width: 0%;"></div>
+    <!-- BVIS Hero Banner Container -->
+    <div class="hero-banner-container">
+      <div class="hero-banner-bg" style="background-image: url('/image/banner-3.png');"></div>
+      <div class="hero-banner-content">
+        <div class="hero-header-row">
+          <h2 class="hero-greeting">Welcome back 💕</h2>
+          <span class="hero-badge">Hôm nay</span>
         </div>
+
+        <!-- BVIS Concept 3-Column Hero Metric Card -->
+        <section class="hero-metric-card">
+          <div class="metric-col">
+            <span class="metric-label">Đã Uống Hôm Nay</span>
+            <span id="hero-progress-text" class="metric-value">0/0</span>
+            <div class="progress-track">
+              <div id="hero-progress-bar" class="progress-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="metric-col">
+            <span class="metric-label">Tổng Hoàn Thành</span>
+            <span id="hero-total-text" class="metric-value">0</span>
+            <span id="hero-streak-text" class="metric-subtext">Chuỗi 0 ngày</span>
+          </div>
+          <div class="metric-col">
+            <span class="metric-label">Cữ Kế Tiếp</span>
+            <span id="hero-next-time" class="metric-value">--:--</span>
+            <span id="hero-next-name" class="metric-subtext">Chưa có</span>
+          </div>
+        </section>
       </div>
-      <div class="metric-col">
-        <span class="metric-label">Tổng Hoàn Thành</span>
-        <span id="hero-total-text" class="metric-value">0</span>
-        <span id="hero-streak-text" class="metric-subtext">Chuỗi 0 ngày</span>
-      </div>
-      <div class="metric-col">
-        <span class="metric-label">Cữ Kế Tiếp</span>
-        <span id="hero-next-time" class="metric-value">--:--</span>
-        <span id="hero-next-name" class="metric-subtext">Chưa có</span>
-      </div>
-    </section>
+    </div>
 
     <!-- Navigation Tabs -->
     <nav class="tab-bar">
@@ -66,6 +77,10 @@
         <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
           Đang tải lịch hôm nay...
         </div>
+      </div>
+      <!-- Accent Graphic from BVIS -->
+      <div id="today-completion-accent" style="text-align: center; margin-top: 20px; opacity: 0.95;">
+        <img src="/image/banner-2.png" alt="Care reminder" style="max-width: 190px; height: auto;">
       </div>
     </main>
 
