@@ -157,7 +157,15 @@ function updateStatus(isConnected, text) {
 async function subscribeDevice() {
   if (!swRegistration) {
     alert('Service Worker chưa sẵn sàng. Hãy tải lại trang.');
-    return;
+    return null;
+  }
+
+  // Check iOS Standalone requirement
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  if (isIOS && !isStandalone) {
+    alert('Trên iPhone (iOS 16.4+), bạn bắt buộc phải bấm nút Chia sẻ ⎋ của Safari -> chọn "Thêm vào Màn hình chính", sau đó mở ứng dụng từ Màn hình chính thì Apple mới cho phép kích hoạt thông báo nhé!');
+    return null;
   }
 
   btnEnableNoti.textContent = 'Đang kích hoạt...';
@@ -169,7 +177,7 @@ async function subscribeDevice() {
       alert('Bạn đã từ chối quyền thông báo. Vui lòng bật lại trong Cài đặt trình duyệt.');
       btnEnableNoti.textContent = 'Bật thông báo ngay';
       btnEnableNoti.disabled = false;
-      return;
+      return null;
     }
 
     const keyRes = await fetch('/api/vapid-key');
@@ -188,12 +196,14 @@ async function subscribeDevice() {
 
     updateStatus(true, 'Đã bật thông báo');
     permissionBanner.style.display = 'none';
-    alert('Kích hoạt thông báo thành công!');
+    alert('Kích hoạt thông báo thành công trên thiết bị này!');
+    return subscription;
   } catch (err) {
     console.error('[Subscription Failed]', err);
-    alert('Không thể kích hoạt thông báo: ' + err.message);
+    alert('Không thể kích hoạt thông báo: ' + (err.message || 'Lỗi không xác định'));
     btnEnableNoti.textContent = 'Bật thông báo ngay';
     btnEnableNoti.disabled = false;
+    return null;
   }
 }
 
@@ -510,8 +520,17 @@ function setupVoiceRecognition() {
 // ----------------------------------------------------
 // Form Handlers & Test Push
 // ----------------------------------------------------
+// Setup Event Handlers
 function setupEventHandlers() {
   btnEnableNoti.addEventListener('click', subscribeDevice);
+
+  // Make header status pill clickable to subscribe
+  deviceStatus.style.cursor = 'pointer';
+  deviceStatus.addEventListener('click', () => {
+    if (!deviceStatus.classList.contains('connected')) {
+      subscribeDevice();
+    }
+  });
 
   // Manual Add Form
   addMedForm.addEventListener('submit', async (e) => {
@@ -558,22 +577,57 @@ function setupEventHandlers() {
     }
   });
 
-  // Test Push Button
+  // Test Push Button (Sends directly to this device's subscription)
   btnTestPush.addEventListener('click', async () => {
     btnTestPush.textContent = 'Đang gửi...';
+    btnTestPush.disabled = true;
+
     try {
-      const res = await fetch('/api/test-push', { method: 'POST' });
+      if (!swRegistration) {
+        alert('Service Worker chưa sẵn sàng. Hãy tải lại trang.');
+        btnTestPush.textContent = 'Gửi thử thông báo';
+        btnTestPush.disabled = false;
+        return;
+      }
+
+      // 1. Get or create current device subscription
+      let sub = await swRegistration.pushManager.getSubscription();
+      if (!sub) {
+        // If not subscribed yet, attempt to subscribe first
+        sub = await subscribeDevice();
+      }
+
+      if (!sub) {
+        btnTestPush.textContent = 'Gửi thử thông báo';
+        btnTestPush.disabled = false;
+        return;
+      }
+
+      // 2. Send push directly to this device's subscription
+      const res = await fetch('/api/test-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub })
+      });
+
       const data = await res.json();
-      btnTestPush.textContent = 'Đã gửi test';
+      btnTestPush.textContent = 'Đã gửi test!';
+
       setTimeout(() => {
         btnTestPush.textContent = 'Gửi thử thông báo';
-      }, 2000);
-      if (data.details && data.details.sent === 0) {
-        alert('Chưa có thiết bị nào kích hoạt thông báo trên trang này.');
+        btnTestPush.disabled = false;
+      }, 2500);
+
+      if (data.details && data.details.sent > 0) {
+        alert('Đã gửi thông báo thành công! Hãy khóa màn hình hoặc kiểm tra thanh thông báo điện thoại.');
+      } else {
+        alert('Không gửi được: ' + (data.error || 'Vui lòng kiểm tra lại quyền thông báo'));
       }
     } catch (err) {
       console.error('Test push error:', err);
+      alert('Lỗi gửi thông báo: ' + err.message);
       btnTestPush.textContent = 'Gửi thử thông báo';
+      btnTestPush.disabled = false;
     }
   });
 }

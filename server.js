@@ -474,11 +474,38 @@ Respond ONLY with valid JSON. No conversational text or markdown code fences.`;
 app.post('/api/test-push', async (req, res) => {
   const currentTime = getCurrentTimeString();
   const payload = {
-    title: 'Kiểm tra thông báo: Hey Let\'s Drink',
+    title: "Kiểm tra thông báo: Hey Let's Drink",
     body: `Thiết bị đã kết nối thành công lúc ${currentTime}. Hệ thống sẽ nhắc lịch đúng giờ.`,
     tag: 'test-push',
     data: { url: '/' }
   };
+
+  // If client provided its own subscription in request body, push to it directly!
+  if (req.body && req.body.subscription && req.body.subscription.endpoint) {
+    try {
+      // Also ensure it is saved in database/storage
+      const subscriptions = readJSON(SUBS_FILE, []);
+      if (!subscriptions.some(s => s.endpoint === req.body.subscription.endpoint)) {
+        subscriptions.push({
+          ...req.body.subscription,
+          subscribedAt: new Date().toISOString()
+        });
+        writeJSON(SUBS_FILE, subscriptions);
+      }
+
+      await webpush.sendNotification(req.body.subscription, JSON.stringify(payload));
+      return res.json({
+        status: 'sent',
+        details: { sent: 1, failed: 0 }
+      });
+    } catch (err) {
+      console.error('[Direct Push Error]', err.statusCode || err.message);
+      return res.status(err.statusCode || 500).json({
+        error: err.message,
+        statusCode: err.statusCode
+      });
+    }
+  }
 
   const result = await broadcastPush(payload);
   res.json({
