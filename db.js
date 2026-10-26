@@ -27,38 +27,7 @@ const defaultEscalation = {
   stage4Message: 'Khẩn cấp: Mau uống thuốc rồi bấm xác nhận cho anh!'
 };
 
-const defaultMeds = [
-  {
-    id: 'med-1',
-    name: 'Vitamin & Khoáng chất',
-    dosage: '1 viên sau ăn sáng',
-    time: '08:00',
-    frequency: 'daily',
-    daysOfWeek: [],
-    dayOfMonth: null,
-    active: true
-  },
-  {
-    id: 'med-2',
-    name: 'Uống nước ấm',
-    dosage: 'Ly 350ml',
-    time: '14:00',
-    frequency: 'daily',
-    daysOfWeek: [],
-    dayOfMonth: null,
-    active: true
-  },
-  {
-    id: 'med-3',
-    name: 'Sắt & Canxi',
-    dosage: '1 viên sau ăn tối',
-    time: '20:00',
-    frequency: 'daily',
-    daysOfWeek: [],
-    dayOfMonth: null,
-    active: true
-  }
-];
+const defaultMeds = [];
 
 // Clean connection string (strip accidental quotes from env input)
 const rawDbUrl = (process.env.DATABASE_URL || '').replace(/^["']|["']$/g, '').trim();

@@ -394,7 +394,7 @@ app.get('/api/medications', async (req, res) => {
       totalToday,
       progressPercent,
       totalCompletedAllTime,
-      streakDays: Math.max(streak, completedToday > 0 ? 1 : 0),
+      streakDays: req.query.streak !== undefined ? Number(req.query.streak) : streak,
       nextDose
     },
     todayMedications: todayMeds,

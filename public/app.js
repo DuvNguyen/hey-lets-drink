@@ -245,8 +245,17 @@ async function subscribeDevice() {
 // Data Loading & Hero Metric Rendering
 // ----------------------------------------------------
 async function loadMedications() {
+  const heroStreakSpinner = document.getElementById('hero-streak-spinner');
+  const heroStreakImg = document.getElementById('hero-streak-img');
+  const heroTotalText = document.getElementById('hero-total-text');
+  
+  if (heroStreakSpinner) heroStreakSpinner.style.display = 'inline-block';
+  if (heroStreakImg) heroStreakImg.style.display = 'none';
+  if (heroTotalText) heroTotalText.style.display = 'none';
+
   try {
-    const res = await fetch('/api/medications');
+    const apiUrl = '/api/medications' + (window.location.search || '');
+    const res = await fetch(apiUrl);
     const data = await res.json();
 
     if (data.date) {
@@ -280,6 +289,8 @@ async function loadMedications() {
   } catch (err) {
     console.error('Error loading medications:', err);
     todayMedList.innerHTML = '<div style="padding: 16px; color: var(--status-missed-text); font-size: 13px;">Không thể tải dữ liệu.</div>';
+  } finally {
+    if (heroStreakSpinner) heroStreakSpinner.style.display = 'none';
   }
 }
 
@@ -293,71 +304,102 @@ async function loadMedications() {
 let currentStreakData = { count: 0, imgSrc: '', label: '', tier: 0 };
 
 function renderStreakFlame(streakDays) {
+  const streakSpinner = document.getElementById('hero-streak-spinner');
+  const streakBadgeBox = document.getElementById('hero-streak-badge');
   const streakImg = document.getElementById('hero-streak-img');
+  const streakRibbonNum = document.getElementById('hero-streak-ribbon-num');
   const streakCount = document.getElementById('hero-total-text');
   const streakSub = document.getElementById('hero-streak-text');
   if (!streakCount || !streakSub) return;
 
+  if (streakSpinner) streakSpinner.style.display = 'none';
   const count = Number(streakDays) || 0;
 
+  // Dưới huy hiệu chuỗi luôn là chữ "Chuỗi ngày"
+  streakSub.textContent = 'Chuỗi ngày';
+  streakSub.style.display = 'block';
+
   if (count < 3) {
-    // Under 3 days: No flame yet (TikTok rule: streak starts at day 3)
-    if (streakImg) streakImg.style.display = 'none';
+    // Under 3 days: No flame yet
+    if (streakBadgeBox) streakBadgeBox.style.display = 'none';
     streakCount.style.display = 'block';
     streakCount.textContent = count;
     streakCount.className = 'metric-value';
 
-    if (count === 0) {
-      streakSub.textContent = 'Uống 3 ngày để mở 🔥';
-    } else if (count === 1) {
-      streakSub.textContent = 'Còn 2 ngày để mở 🔥';
-    } else if (count === 2) {
-      streakSub.textContent = 'Còn 1 ngày để mở 🔥';
-    }
-    currentStreakData = { count, imgSrc: '', label: streakSub.textContent, tier: 0 };
+    currentStreakData = { count, imgSrc: '', label: `Chuỗi ${count} ngày`, tier: 0 };
     return;
   }
 
-  // 3+ days: Official TikTok streak flame is active with Ribbon Banner!
+  // 3+ days: Official TikTok streak flame is active with dynamic Ribbon Banner!
   streakCount.style.display = 'none';
 
   let tier = 1;
-  let imgSrc = '/image/tiktok-streak-3.png';
-  let subLabel = `Lửa Vàng · ${count} ngày`;
+  let blankImg = '/image/tiktok-streak-blank-3.png';
+  let modalTitle = 'Lửa Vàng';
 
   if (count >= 20) {
     tier = 3;
-    imgSrc = '/image/tiktok-streak-20.png';
-    subLabel = `Lửa Tím · ${count} ngày`;
+    blankImg = '/image/tiktok-streak-blank-20.png';
+    modalTitle = 'Lửa Tím';
   } else if (count >= 10) {
     tier = 2;
-    imgSrc = '/image/tiktok-streak-10.png';
-    subLabel = `Lửa Cam · ${count} ngày`;
+    blankImg = '/image/tiktok-streak-blank-10.png';
+    modalTitle = 'Lửa Cam';
   }
 
+  if (streakBadgeBox) {
+    streakBadgeBox.style.display = 'inline-flex';
+    streakBadgeBox.className = `tiktok-streak-badge-box tier-${tier}`;
+  }
   if (streakImg) {
-    streakImg.src = imgSrc;
-    streakImg.style.display = 'inline-block';
+    streakImg.src = blankImg;
+    streakImg.style.display = 'block';
   }
-  streakSub.textContent = subLabel;
+  if (streakRibbonNum) {
+    streakRibbonNum.textContent = count;
+    if (count >= 100) {
+      streakRibbonNum.style.fontSize = '7px';
+    } else if (count >= 10) {
+      streakRibbonNum.style.fontSize = '8px';
+    } else {
+      streakRibbonNum.style.fontSize = '9px';
+    }
+  }
 
-  currentStreakData = { count, imgSrc, label: subLabel, tier };
+  currentStreakData = { count, imgSrc: blankImg, label: `${modalTitle} · ${count} ngày`, tier };
 }
 
 window.openStreakModal = function() {
   const modal = document.getElementById('streak-celebration-backdrop');
+  const modalBadgeBox = document.getElementById('streak-modal-badge-box');
   const modalImg = document.getElementById('streak-modal-img');
+  const modalRibbonNum = document.getElementById('streak-modal-ribbon-num');
   const modalPill = document.getElementById('streak-modal-pill-text');
   const modalHint = document.getElementById('streak-modal-hint');
   if (!modal) return;
 
   const count = currentStreakData.count || 0;
+  const tier = currentStreakData.tier || 1;
+
   if (count < 3) {
-    if (modalImg) modalImg.src = '/image/tiktok-streak-3.png';
+    if (modalBadgeBox) modalBadgeBox.className = 'tiktok-streak-modal-box tier-1';
+    if (modalImg) modalImg.src = '/image/tiktok-streak-blank-3.png';
+    if (modalRibbonNum) modalRibbonNum.textContent = count;
     if (modalPill) modalPill.textContent = `${count}/3 ngày mở lửa`;
     if (modalHint) modalHint.textContent = `Chỉ cần uống thuốc đủ 3 ngày liên tiếp, ngọn lửa TikTok đầu tiên sẽ bùng cháy tặng em! ❤️`;
   } else {
-    if (modalImg) modalImg.src = currentStreakData.imgSrc || '/image/tiktok-streak-20.png';
+    if (modalBadgeBox) modalBadgeBox.className = `tiktok-streak-modal-box tier-${tier}`;
+    if (modalImg) modalImg.src = currentStreakData.imgSrc || '/image/tiktok-streak-blank-20.png';
+    if (modalRibbonNum) {
+      modalRibbonNum.textContent = count;
+      if (count >= 100) {
+        modalRibbonNum.style.fontSize = '34px';
+      } else if (count >= 10) {
+        modalRibbonNum.style.fontSize = '40px';
+      } else {
+        modalRibbonNum.style.fontSize = '46px';
+      }
+    }
     if (modalPill) modalPill.textContent = `${count} Streak`;
     if (modalHint) modalHint.textContent = `Đừng để chuỗi 🔥 bị dập tắt! Hãy nhắc em uống thuốc đúng giờ mỗi ngày nha.`;
   }

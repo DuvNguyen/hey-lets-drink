@@ -57,12 +57,16 @@
             </div>
           </div>
           <div class="metric-col metric-col-streak" onclick="openStreakModal()" style="cursor: pointer;" title="Chạm để xem cúp chuỗi ngày">
-            <span class="metric-label">Chuỗi ngày</span>
+            <span id="hero-streak-label" class="metric-label" style="visibility: hidden;">CHUỖI</span>
             <div class="streak-badge-wrap">
               <span id="hero-total-text" class="metric-value">0</span>
-              <img id="hero-streak-img" class="tiktok-streak-img" src="/image/tiktok-streak-20.png" alt="Streak Flame" style="display: none;" />
+              <div id="hero-streak-badge" class="tiktok-streak-badge-box" style="display: none;">
+                <img id="hero-streak-img" class="tiktok-streak-img" src="/image/tiktok-streak-blank-20.png" alt="Streak Flame" />
+                <span id="hero-streak-ribbon-num" class="tiktok-ribbon-number">0</span>
+              </div>
+              <div id="hero-streak-spinner" class="spinner spinner-sm" style="display: none;"></div>
             </div>
-            <span id="hero-streak-text" class="metric-subtext">Uống 3 ngày để mở 🔥</span>
+            <span id="hero-streak-text" class="metric-subtext">Chuỗi ngày</span>
           </div>
           <div class="metric-col">
             <span class="metric-label">Cữ kế tiếp</span>
@@ -87,8 +91,9 @@
         <span id="current-date-display" style="font-size: 12px; color: var(--text-muted);"></span>
       </div>
       <div id="today-medication-list" class="medication-list">
-        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
-          Đang tải lịch hôm nay...
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Đang tải lịch hôm nay...</span>
         </div>
       </div>
       <!-- Accent Graphic from BVIS -->
@@ -192,8 +197,9 @@
         <span class="section-title">Tất Cả Các Cữ Thuốc Đang Quản Lý</span>
       </div>
       <div id="all-medication-list" class="medication-list">
-        <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">
-          Đang tải danh sách...
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Đang tải danh sách thuốc...</span>
         </div>
       </div>
     </main>
@@ -426,9 +432,12 @@
     <div class="streak-celebration-content">
       <button type="button" class="streak-btn-close" onclick="closeStreakModal()" aria-label="Đóng">×</button>
       
-      <!-- Big TikTok Flame Badge from Image -->
+      <!-- Big TikTok Flame Badge with Dynamic Ribbon Number -->
       <div class="streak-big-badge-container">
-        <img id="streak-modal-img" class="streak-modal-flame-img" src="/image/tiktok-streak-20.png" alt="TikTok Streak Flame" />
+        <div id="streak-modal-badge-box" class="tiktok-streak-modal-box">
+          <img id="streak-modal-img" class="streak-modal-flame-img" src="/image/tiktok-streak-blank-20.png" alt="TikTok Streak Flame" />
+          <span id="streak-modal-ribbon-num" class="tiktok-modal-ribbon-number">0</span>
+        </div>
       </div>
 
       <!-- TikTok Streak Pill -->
