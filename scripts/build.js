@@ -3,14 +3,27 @@ const { execSync } = require('child_process');
 
 console.log('--- Starting build verification ---');
 
-// 1. Syntax check server.js and db.js
-console.log('1. Checking Node.js syntax...');
+// 1. Bundle client assets
+console.log('1. Bundling client assets...');
+const esbuild = require('esbuild');
+esbuild.buildSync({
+  entryPoints: ['node_modules/@neon/realtime/dist/client.js'],
+  bundle: true,
+  format: 'iife',
+  globalName: 'NeonRealtime',
+  outfile: 'public/neon-realtime.js',
+  minify: true
+});
+console.log('✓ Neon Realtime client bundled into public/neon-realtime.js');
+
+// 2. Syntax check server.js and db.js
+console.log('2. Checking Node.js syntax...');
 execSync('node --check server.js', { stdio: 'inherit' });
 execSync('node --check db.js', { stdio: 'inherit' });
 console.log('✓ Syntax valid');
 
-// 2. Neon Database connectivity and schema check if DATABASE_URL is present
-console.log('2. Verifying Neon services...');
+// 3. Neon Database connectivity and schema check if DATABASE_URL is present
+console.log('3. Verifying Neon services...');
 if (process.env.DATABASE_URL) {
   const db = require('../db');
   db.initDb().then(async () => {

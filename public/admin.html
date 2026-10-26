@@ -294,6 +294,7 @@
   <!-- Toast Notification Container -->
   <div id="toast" class="toast-notification"></div>
 
+  <script src="/neon-realtime.js"></script>
   <script>
     const adminMedList = document.getElementById('admin-med-list');
     const adminTimeLabel = document.getElementById('admin-time-label');
@@ -315,6 +316,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadAdminStatus();
       setupHandlers();
+      initAdminRealtime();
     });
 
     function showToast(msg) {
@@ -449,6 +451,41 @@
           btnSendNudge.disabled = false;
         }
       });
+    }
+
+    // Neon Realtime live sync for Admin Dashboard
+    async function initAdminRealtime() {
+      if (typeof window.NeonRealtime === 'undefined') return;
+      try {
+        const res = await fetch('/api/realtime/sealed-queries');
+        if (!res.ok) return;
+        const { url, sealedMeds, sealedLogs } = await res.json();
+        if (!url || !sealedMeds || !sealedLogs) return;
+
+        const rtClient = window.NeonRealtime.createRealtimeClient({ url });
+        let initMeds = true;
+        rtClient.subscribe(sealedMeds).onChange(({ status, error }) => {
+          if (error) return;
+          if (status === 'live') {
+            if (!initMeds) loadAdminStatus();
+            initMeds = false;
+          }
+        });
+
+        let initLogs = true;
+        rtClient.subscribe(sealedLogs).onChange(({ status, error }) => {
+          if (error) return;
+          if (status === 'live') {
+            if (!initLogs) {
+              showToast('Bạn gái vừa bấm uống thuốc!');
+              loadAdminStatus();
+            }
+            initLogs = false;
+          }
+        });
+      } catch (e) {
+        console.warn('[Admin Realtime] Failed:', e.message);
+      }
     }
   </script>
 </body>

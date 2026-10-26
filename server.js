@@ -478,7 +478,27 @@ app.post('/api/medications/:id/take', async (req, res) => {
   res.json({ success: true, log: logEntry });
 });
 
-// Neon Realtime sealed query endpoint
+// Neon Realtime sealed query endpoints
+app.get('/api/realtime/sealed-queries', async (req, res) => {
+  try {
+    if (!process.env.NEON_REALTIME_SECRET || !process.env.NEON_REALTIME_URL) {
+      return res.status(503).json({ success: false, error: 'Neon Realtime not configured' });
+    }
+    const [sealedMeds, sealedLogs] = await Promise.all([
+      db.sealRealtimeQuery('SELECT id, name, dosage, time, frequency, active FROM medications', []),
+      db.sealRealtimeQuery('SELECT id, medication_id, status, date, taken_at FROM logs ORDER BY id DESC LIMIT 20', [])
+    ]);
+    res.json({
+      success: true,
+      url: process.env.NEON_REALTIME_URL,
+      sealedMeds,
+      sealedLogs
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/api/realtime/sealed-query', async (req, res) => {
   try {
     const sealed = await db.sealRealtimeQuery('SELECT id, name, dosage, time, active FROM medications', []);

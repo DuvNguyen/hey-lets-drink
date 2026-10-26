@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEditModal();
   setupVoiceRecognition();
   setupEventHandlers();
+  initNeonRealtime();
 });
 
 // Helper: Convert Base64 URL to Uint8Array for VAPID key
@@ -844,3 +845,58 @@ function escapeHTML(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+// ----------------------------------------------------
+// Neon Realtime Live Synchronization (Cross-Device Sync)
+// ----------------------------------------------------
+let rtClient = null;
+let subMeds = null;
+let subLogs = null;
+
+async function initNeonRealtime() {
+  if (typeof window.NeonRealtime === 'undefined') {
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/realtime/sealed-queries');
+    if (!res.ok) return;
+    const { url, sealedMeds, sealedLogs } = await res.json();
+    if (!url || !sealedMeds || !sealedLogs) return;
+
+    rtClient = window.NeonRealtime.createRealtimeClient({ url });
+
+    let isInitMeds = true;
+    subMeds = rtClient.subscribe(sealedMeds);
+    subMeds.onChange(({ status, error }) => {
+      if (error) return;
+      if (status === 'live') {
+        if (!isInitMeds) {
+          loadMedications();
+        }
+        isInitMeds = false;
+      }
+    });
+
+    let isInitLogs = true;
+    subLogs = rtClient.subscribe(sealedLogs);
+    subLogs.onChange(({ status, error }) => {
+      if (error) return;
+      if (status === 'live') {
+        if (!isInitLogs) {
+          loadMedications();
+        }
+        isInitLogs = false;
+      }
+    });
+  } catch (err) {
+    console.warn('[Realtime] Live sync initialization skipped:', err.message);
+  }
+}
+
+// Battery saver: Refresh when app tab comes back to foreground
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    loadMedications();
+  }
+});
