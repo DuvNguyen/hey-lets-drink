@@ -22,6 +22,19 @@ const VAPID_FILE = path.join(DATA_DIR, 'vapid.json');
 const SUBS_FILE = path.join(DATA_DIR, 'subscriptions.json');
 const MEDS_FILE = path.join(DATA_DIR, 'medications.json');
 const LOGS_FILE = path.join(DATA_DIR, 'logs.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+
+// Default Notification Settings
+const defaultSettings = {
+  sound: 'chime', // 'chime', 'bell', 'ping', 'pulse'
+  density: 'double', // 'single' (1x), 'double' (2x: 0m, 10m), 'strict' (3x: 0m, 5m, 15m)
+  vibration: 'standard', // 'soft', 'standard', 'urgent'
+  advanceNotice: 0 // 0 = on-time, 5 = 5m before
+};
+
+if (!fs.existsSync(SETTINGS_FILE)) {
+  writeJSON(SETTINGS_FILE, defaultSettings);
+}
 
 // Helper to read JSON safely
 function readJSON(file, defaultValue) {
@@ -43,30 +56,18 @@ function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 }
 
-// Initialize VAPID Keys (Supports Environment Variables or persistent file)
+// Fixed VAPID Keys fallback (Ensures Vercel serverless cold starts never desync)
+const DEFAULT_VAPID_PUBLIC = 'BM2nC4zvoG3c2GWkNr0gVbuyYcPtvQclIKI9fMPHqv_vHg4-44IWT17LzMUFEaxAKQ9F7u9mSl_uzQf-aU9vaSY';
+const DEFAULT_VAPID_PRIVATE = 'qQHldidrKr1VNlydEgdV4bdWXcr_G6y42TuGW9jLuDg';
+
 let vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY,
-  privateKey: process.env.VAPID_PRIVATE_KEY
+  publicKey: process.env.VAPID_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC,
+  privateKey: process.env.VAPID_PRIVATE_KEY || DEFAULT_VAPID_PRIVATE
 };
 
-if (!vapidKeys.publicKey || !vapidKeys.privateKey) {
-  if (fs.existsSync(VAPID_FILE)) {
-    vapidKeys = readJSON(VAPID_FILE, null);
-  }
-}
-
-if (!vapidKeys || !vapidKeys.publicKey || !vapidKeys.privateKey) {
-  vapidKeys = webpush.generateVAPIDKeys();
-  try {
-    writeJSON(VAPID_FILE, vapidKeys);
-  } catch (e) {
-    // ignore in read-only environment
-  }
-  console.log('Generated new VAPID keys.');
-}
-
+// Apple APNs requires a valid public URI or public email in VAPID details (never use .local)
 webpush.setVapidDetails(
-  'mailto:contact@heyletsdrink.local',
+  'https://github.com/DuvNguyen/hey-lets-drink',
   vapidKeys.publicKey,
   vapidKeys.privateKey
 );
@@ -190,6 +191,21 @@ async function broadcastPush(payload) {
   return { sent, failed };
 }
 
+function getVibrationPattern(vib) {
+  if (vib === 'soft') return [100, 50, 100];
+  if (vib === 'urgent') return [300, 100, 300, 100, 300];
+  return [200, 100, 200];
+}
+
+function addMinutesToTime(timeStr, minutes) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const total = h * 60 + m + minutes;
+  const newTotal = (total + 1440) % 1440;
+  const newH = String(Math.floor(newTotal / 60)).padStart(2, '0');
+  const newM = String(newTotal % 60).padStart(2, '0');
+  return `${newH}:${newM}`;
+}
+
 // Check and trigger scheduled reminders
 async function checkAndSendReminders() {
   const vnTime = getVNTime();
@@ -197,29 +213,59 @@ async function checkAndSendReminders() {
   const today = getTodayString();
   const meds = readJSON(MEDS_FILE, []);
   const logs = readJSON(LOGS_FILE, []);
-
-  const dueMeds = meds.filter(m => m.active && m.time === currentTime && isMedicationScheduledForToday(m, vnTime));
-  if (!dueMeds.length) return 0;
+  const settings = readJSON(SETTINGS_FILE, defaultSettings);
 
   let triggered = 0;
-  for (const med of dueMeds) {
+  const vibration = getVibrationPattern(settings.vibration);
+
+  for (const med of meds) {
+    if (!med.active || !isMedicationScheduledForToday(med, vnTime)) continue;
+
     const alreadyTaken = logs.some(l => l.medicationId === med.id && l.date === today && l.status === 'TAKEN');
-    if (!alreadyTaken) {
-      console.log(`[Reminder Triggered] ${med.name} at ${currentTime}`);
+    if (alreadyTaken) continue;
+
+    let shouldTrigger = false;
+    let reminderPrefix = '';
+
+    // 1. On-time check
+    if (med.time === currentTime) {
+      shouldTrigger = true;
+    }
+    // 2. Density checks for unconfirmed doses
+    else if (settings.density === 'double') {
+      // 10 minutes follow-up nudge
+      if (addMinutesToTime(med.time, 10) === currentTime) {
+        shouldTrigger = true;
+        reminderPrefix = '[Nhắc lại] ';
+      }
+    } else if (settings.density === 'strict') {
+      // 5 minutes and 15 minutes follow-up nudges
+      if (addMinutesToTime(med.time, 5) === currentTime || addMinutesToTime(med.time, 15) === currentTime) {
+        shouldTrigger = true;
+        reminderPrefix = '[Nhắc cữ chưa uống] ';
+      }
+    }
+
+    if (shouldTrigger) {
+      console.log(`[Reminder Triggered] ${reminderPrefix}${med.name} at ${currentTime} (Scheduled: ${med.time})`);
       await broadcastPush({
-        title: `Lịch uống thuốc: ${med.name}`,
+        title: `${reminderPrefix}Lịch uống thuốc: ${med.name}`,
         body: `Đến giờ cữ ${med.time} (${med.dosage}). Vui lòng uống thuốc đúng giờ.`,
         tag: `med-${med.id}-${today}`,
+        vibrate: vibration,
         data: {
           medicationId: med.id,
           time: med.time,
           date: today,
+          sound: settings.sound,
+          vibrate: vibration,
           url: '/'
         }
       });
       triggered++;
     }
   }
+
   return triggered;
 }
 
@@ -228,6 +274,22 @@ async function checkAndSendReminders() {
 // 1. Get VAPID public key
 app.get('/api/vapid-key', (req, res) => {
   res.json({ publicKey: vapidKeys.publicKey });
+});
+
+// Settings APIs
+app.get('/api/settings', (req, res) => {
+  const settings = readJSON(SETTINGS_FILE, defaultSettings);
+  res.json(settings);
+});
+
+app.post('/api/settings', (req, res) => {
+  const current = readJSON(SETTINGS_FILE, defaultSettings);
+  const updated = {
+    ...current,
+    ...req.body
+  };
+  writeJSON(SETTINGS_FILE, updated);
+  res.json({ success: true, settings: updated });
 });
 
 // 2. Register/Subscribe device

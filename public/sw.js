@@ -42,6 +42,15 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     self.registration.showNotification(data.title, options)
+      .catch((err) => {
+        console.warn('[SW] showNotification with actions failed, retrying simple notification for iOS:', err);
+        return self.registration.showNotification(data.title, {
+          body: data.body,
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          data: data.data || { url: '/' }
+        });
+      })
   );
 });
 
