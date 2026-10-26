@@ -1,8 +1,0 @@
-{
-  "schemaVersion": 1,
-  "command": "deliver",
-  "status": "pending",
-  "receiptId": "ce55ef97-4973-49c8-adf1-2698eaa64f23",
-  "input": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/candidate.json",
-  "output": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.html"
-}

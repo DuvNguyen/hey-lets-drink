@@ -1,5 +1,4 @@
 const { neon } = require('@neondatabase/serverless');
-const { createRealtime, rawSql } = require('@neon/realtime/server');
 const fs = require('fs');
 const path = require('path');
 
@@ -57,27 +56,40 @@ const defaultMeds = [
   }
 ];
 
+// Clean connection string (strip accidental quotes from env input)
+const rawDbUrl = (process.env.DATABASE_URL || '').replace(/^["']|["']$/g, '').trim();
+
 // Initialize Neon SQL client if DATABASE_URL is provided
 let sql = null;
-if (process.env.DATABASE_URL) {
+if (rawDbUrl) {
   try {
-    sql = neon(process.env.DATABASE_URL);
+    sql = neon(rawDbUrl);
   } catch (err) {
     console.error('Failed to initialize Neon SQL client:', err.message);
   }
 }
 
-// Initialize Neon Realtime if SECRET is provided
-let realtime = null;
-if (process.env.NEON_REALTIME_SECRET) {
-  try {
-    realtime = createRealtime({
-      secret: process.env.NEON_REALTIME_SECRET,
-      db: 'neondb'
+// Lazy-load Neon Realtime via dynamic import to maintain full CJS/ESM compatibility across runtimes
+let realtimeInstance = null;
+let realtimeModulePromise = null;
+
+async function getRealtime() {
+  if (realtimeInstance) return realtimeInstance;
+  const secret = (process.env.NEON_REALTIME_SECRET || '').replace(/^["']|["']$/g, '').trim();
+  if (!secret) return null;
+  if (!realtimeModulePromise) {
+    realtimeModulePromise = import('@neon/realtime/server').then(({ createRealtime, rawSql }) => {
+      realtimeInstance = {
+        client: createRealtime({ secret, db: 'neondb' }),
+        rawSql
+      };
+      return realtimeInstance;
+    }).catch(err => {
+      console.error('Failed to dynamically load @neon/realtime/server:', err.message);
+      return null;
     });
-  } catch (err) {
-    console.error('Failed to initialize Neon Realtime:', err.message);
   }
+  return realtimeModulePromise;
 }
 
 // Local JSON fallback helpers
@@ -433,11 +445,12 @@ async function updateEscalation(newEscalation) {
 
 // Realtime Sealed Query
 async function sealRealtimeQuery(querySql, params = []) {
-  if (!realtime) {
+  const rt = await getRealtime();
+  if (!rt || !rt.client) {
     throw new Error('Neon Realtime is not configured (missing NEON_REALTIME_SECRET)');
   }
-  return await realtime.seal({
-    query: rawSql(querySql, params)
+  return await rt.client.seal({
+    query: rt.rawSql(querySql, params)
   });
 }
 

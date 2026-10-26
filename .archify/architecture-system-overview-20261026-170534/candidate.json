@@ -20,8 +20,8 @@
       "label": "Admin Dashboard",
       "sublabel": "Boyfriend Monitor & Nudge",
       "icon": "person",
-      "pos": [60, 70],
-      "size": [155, 62],
+      "pos": [40, 70],
+      "size": [145, 62],
       "tag": "Web UI",
       "sources": [
         {
@@ -38,8 +38,8 @@
       "label": "Medication PWA",
       "sublabel": "SDv26 UI / Web Speech API",
       "icon": "frontend",
-      "pos": [280, 70],
-      "size": [160, 62],
+      "pos": [290, 70],
+      "size": [155, 62],
       "tag": "iOS 16.4+ & Android",
       "sources": [
         {
@@ -56,8 +56,8 @@
       "label": "Service Worker",
       "sublabel": "sw.js / Push Event Handler",
       "icon": "frontend",
-      "pos": [510, 70],
-      "size": [165, 62],
+      "pos": [560, 70],
+      "size": [160, 62],
       "tag": "Background Worker",
       "sources": [
         {
@@ -69,13 +69,31 @@
       ]
     },
     {
+      "id": "gemini_ai",
+      "type": "external",
+      "label": "Gemini 3.5 Flash Lite",
+      "sublabel": "Speech-to-JSON Parser",
+      "icon": "external",
+      "pos": [40, 230],
+      "size": [145, 62],
+      "tag": "Google AI Studio",
+      "sources": [
+        {
+          "path": "server.js",
+          "line": 616,
+          "end_line": 628,
+          "label": "Gemini API HTTP request"
+        }
+      ]
+    },
+    {
       "id": "web_server",
       "type": "backend",
       "label": "Express API Server",
       "sublabel": "REST Endpoints & Router",
       "icon": "backend",
-      "pos": [280, 230],
-      "size": [160, 62],
+      "pos": [290, 230],
+      "size": [155, 62],
       "tag": "Node.js / Vercel",
       "sources": [
         {
@@ -98,8 +116,8 @@
       "label": "Push Dispatcher",
       "sublabel": "web-push (RFC 8292)",
       "icon": "backend",
-      "pos": [510, 230],
-      "size": [165, 62],
+      "pos": [560, 230],
+      "size": [160, 62],
       "tag": "VAPID Auth",
       "sources": [
         {
@@ -122,7 +140,7 @@
       "label": "APNs & FCM",
       "sublabel": "OS Push Services",
       "icon": "cloud",
-      "pos": [740, 230],
+      "pos": [830, 230],
       "size": [155, 62],
       "tag": "Apple / Google",
       "sources": [
@@ -135,31 +153,13 @@
       ]
     },
     {
-      "id": "gemini_ai",
-      "type": "external",
-      "label": "Gemini 3.5 Flash Lite",
-      "sublabel": "Speech-to-JSON Parser",
-      "icon": "external",
-      "pos": [60, 390],
-      "size": [155, 62],
-      "tag": "Google AI Studio",
-      "sources": [
-        {
-          "path": "server.js",
-          "line": 616,
-          "end_line": 628,
-          "label": "Gemini API HTTP request"
-        }
-      ]
-    },
-    {
       "id": "file_store",
       "type": "database",
       "label": "JSON State Store",
       "sublabel": "Meds, Logs & Subscriptions",
       "icon": "database",
-      "pos": [280, 390],
-      "size": [160, 62],
+      "pos": [290, 390],
+      "size": [155, 62],
       "tag": "data/ or /tmp",
       "sources": [
         {
@@ -176,8 +176,8 @@
       "label": "Escalation Engine",
       "sublabel": "node-cron + Anki Spacing",
       "icon": "clock",
-      "pos": [510, 390],
-      "size": [165, 62],
+      "pos": [560, 390],
+      "size": [160, 62],
       "tag": "Multi-Stage Urgency",
       "sources": [
         {
@@ -200,7 +200,7 @@
       "label": "Cron Keeper",
       "sublabel": "cron-job.org / Webhook",
       "icon": "clock",
-      "pos": [740, 390],
+      "pos": [830, 390],
       "size": [155, 62],
       "tag": "Keep-Alive",
       "sources": [
@@ -222,8 +222,8 @@
     },
     {
       "kind": "region",
-      "label": "Node.js Application Server",
-      "wraps": ["web_server", "push_dispatcher", "cron_scheduler"],
+      "label": "Node.js Application Server & Persistence",
+      "wraps": ["web_server", "push_dispatcher", "file_store", "cron_scheduler"],
       "pad": 16
     },
     {
@@ -245,21 +245,23 @@
       "id": "pwa-to-server",
       "from": "pwa_client",
       "to": "web_server",
-      "label": "HTTPS REST & sync",
+      "label": "HTTPS REST",
       "variant": "emphasis"
     },
     {
       "id": "sw-to-pwa",
       "from": "service_worker",
       "to": "pwa_client",
-      "label": "Open / focus app",
-      "variant": "dashed"
+      "label": "Focus app",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right"
     },
     {
       "id": "server-to-gemini",
       "from": "web_server",
       "to": "gemini_ai",
-      "label": "Voice-to-JSON",
+      "label": "Voice parse",
       "variant": "default"
     },
     {
@@ -280,14 +282,14 @@
       "id": "cron-to-dispatcher",
       "from": "cron_scheduler",
       "to": "push_dispatcher",
-      "label": "Due dose trigger",
+      "label": "Trigger due dose",
       "variant": "emphasis"
     },
     {
       "id": "dispatcher-to-gateways",
       "from": "push_dispatcher",
       "to": "push_gateways",
-      "label": "VAPID signed push",
+      "label": "VAPID push",
       "variant": "security"
     },
     {
@@ -303,7 +305,7 @@
       "id": "keeper-to-scheduler",
       "from": "cron_keeper",
       "to": "cron_scheduler",
-      "label": "GET /cron-trigger",
+      "label": "Cron trigger",
       "variant": "dashed"
     }
   ],

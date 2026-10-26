@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/candidate.json",
+    "sha256": "a25e5fb78327b8238e5c4ac01acef3d0c0233e4a783f7623377e4f33ded0fda8",
+    "bytes": 8747
+  },
+  "artifact": {
+    "path": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.html",
+    "sha256": "7715a8fe9fac25d946ee012af1d2863e529d9a422b833889b0058dbfeeff6591",
+    "bytes": 856519
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/review-2/system-overview.finalize.json",
+    "summaryReceipt": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/review-2/system-overview.finalize-summary.json",
+    "browserCheckReceipt": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/review-2/system-overview.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-26T10:07:39.452Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2953,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

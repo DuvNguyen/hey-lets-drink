@@ -583,15 +583,17 @@ app.get('/api/cron-trigger', async (req, res) => {
 });
 
 // ---------------- Background Cron (Per minute) ----------------
-cron.schedule('* * * * *', async () => {
-  try {
-    await checkAndSendReminders();
-  } catch (err) {
-    console.error('[Cron Error]', err.message);
-  }
-}, {
-  timezone: 'Asia/Ho_Chi_Minh'
-});
+if (!process.env.VERCEL) {
+  cron.schedule('* * * * *', async () => {
+    try {
+      await checkAndSendReminders();
+    } catch (err) {
+      console.error('[Cron Error]', err.message);
+    }
+  }, {
+    timezone: 'Asia/Ho_Chi_Minh'
+  });
+}
 
 // Start Server if not in Vercel Serverless environment
 if (!process.env.VERCEL) {

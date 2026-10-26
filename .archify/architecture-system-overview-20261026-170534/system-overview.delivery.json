@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "1b021c34-1a9b-4ac5-ad13-345ac1e0d1b2",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/candidate.json",
+  "output": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.html",
+  "specification": {
+    "sha256": "a25e5fb78327b8238e5c4ac01acef3d0c0233e4a783f7623377e4f33ded0fda8",
+    "bytes": 8747
+  },
+  "artifact": {
+    "sha256": "7715a8fe9fac25d946ee012af1d2863e529d9a422b833889b0058dbfeeff6591",
+    "bytes": 856519
+  }
+}
