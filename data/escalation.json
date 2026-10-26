@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "startInterval": 10,
+  "maxDuration": 45,
+  "customNudgeText": "Anh nhắc em nè: mau uống thuốc đúng cữ nha!"
+}

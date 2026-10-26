@@ -23,6 +23,7 @@ const SUBS_FILE = path.join(DATA_DIR, 'subscriptions.json');
 const MEDS_FILE = path.join(DATA_DIR, 'medications.json');
 const LOGS_FILE = path.join(DATA_DIR, 'logs.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const ESCALATION_FILE = path.join(DATA_DIR, 'escalation.json');
 
 // Default Notification Settings
 const defaultSettings = {
@@ -32,8 +33,19 @@ const defaultSettings = {
   advanceNotice: 0 // 0 = on-time, 5 = 5m before
 };
 
+// Anki Spaced Escalation (Decreasing intervals down to 1 per minute)
+const defaultEscalation = {
+  enabled: true,
+  startInterval: 10,
+  maxDuration: 45, // stops after 45 minutes of overdue
+  customNudgeText: "Anh nhắc em nè: mau uống thuốc đúng cữ nha!"
+};
+
 if (!fs.existsSync(SETTINGS_FILE)) {
   writeJSON(SETTINGS_FILE, defaultSettings);
+}
+if (!fs.existsSync(ESCALATION_FILE)) {
+  writeJSON(ESCALATION_FILE, defaultEscalation);
 }
 
 // Helper to read JSON safely
@@ -197,26 +209,24 @@ function getVibrationPattern(vib) {
   return [200, 100, 200];
 }
 
-function addMinutesToTime(timeStr, minutes) {
+function getMinutesFromTimeString(timeStr) {
   const [h, m] = timeStr.split(':').map(Number);
-  const total = h * 60 + m + minutes;
-  const newTotal = (total + 1440) % 1440;
-  const newH = String(Math.floor(newTotal / 60)).padStart(2, '0');
-  const newM = String(newTotal % 60).padStart(2, '0');
-  return `${newH}:${newM}`;
+  return h * 60 + m;
 }
 
-// Check and trigger scheduled reminders
+// Check and trigger scheduled reminders (with Anki Escalation Mode)
 async function checkAndSendReminders() {
   const vnTime = getVNTime();
   const currentTime = getCurrentTimeString();
+  const currentMinutes = getMinutesFromTimeString(currentTime);
   const today = getTodayString();
   const meds = readJSON(MEDS_FILE, []);
   const logs = readJSON(LOGS_FILE, []);
   const settings = readJSON(SETTINGS_FILE, defaultSettings);
+  const escalation = readJSON(ESCALATION_FILE, defaultEscalation);
 
   let triggered = 0;
-  const vibration = getVibrationPattern(settings.vibration);
+  let vibration = getVibrationPattern(settings.vibration);
 
   for (const med of meds) {
     if (!med.active || !isMedicationScheduledForToday(med, vnTime)) continue;
@@ -224,33 +234,49 @@ async function checkAndSendReminders() {
     const alreadyTaken = logs.some(l => l.medicationId === med.id && l.date === today && l.status === 'TAKEN');
     if (alreadyTaken) continue;
 
+    const medMinutes = getMinutesFromTimeString(med.time);
+    const diffMinutes = currentMinutes - medMinutes;
+
     let shouldTrigger = false;
     let reminderPrefix = '';
 
-    // 1. On-time check
-    if (med.time === currentTime) {
+    // 1. On-time check (diff = 0m)
+    if (diffMinutes === 0) {
       shouldTrigger = true;
     }
-    // 2. Density checks for unconfirmed doses
-    else if (settings.density === 'double') {
-      // 10 minutes follow-up nudge
-      if (addMinutesToTime(med.time, 10) === currentTime) {
+    // 2. Anki Escalation Mode: Faster reminders down to 1 per minute!
+    else if (escalation.enabled && diffMinutes > 0 && diffMinutes <= (escalation.maxDuration || 45)) {
+      if (diffMinutes === 10) {
+        // Stage 1: 10 minutes overdue
         shouldTrigger = true;
-        reminderPrefix = '[Nhắc lại] ';
-      }
-    } else if (settings.density === 'strict') {
-      // 5 minutes and 15 minutes follow-up nudges
-      if (addMinutesToTime(med.time, 5) === currentTime || addMinutesToTime(med.time, 15) === currentTime) {
+        reminderPrefix = '⏰ [Quá giờ 10p] ';
+      } else if (diffMinutes === 15) {
+        // Stage 2: 5 minutes later
         shouldTrigger = true;
-        reminderPrefix = '[Nhắc cữ chưa uống] ';
+        reminderPrefix = '⚠️ [Quá giờ 15p - Nhắc lần 2] ';
+      } else if (diffMinutes === 17) {
+        // Stage 3: 2 minutes later
+        shouldTrigger = true;
+        reminderPrefix = '🚨 [Quá giờ 17p - Uống ngay] ';
+        vibration = [300, 100, 300, 100, 300];
+      } else if (diffMinutes >= 18) {
+        // Stage 4: High urgency -> Fires EVERY 1 MINUTE until marked done!
+        shouldTrigger = true;
+        reminderPrefix = `🔥 [Khẩn cấp: Quá giờ ${diffMinutes}p] `;
+        vibration = [400, 100, 400, 100, 400, 100, 500];
       }
+    }
+    // 3. Fallback density if Anki escalation is disabled
+    else if (!escalation.enabled && settings.density === 'double' && diffMinutes === 10) {
+      shouldTrigger = true;
+      reminderPrefix = '[Nhắc lại] ';
     }
 
     if (shouldTrigger) {
-      console.log(`[Reminder Triggered] ${reminderPrefix}${med.name} at ${currentTime} (Scheduled: ${med.time})`);
+      console.log(`[Reminder Triggered] ${reminderPrefix}${med.name} at ${currentTime} (Overdue: ${diffMinutes}m)`);
       await broadcastPush({
         title: `${reminderPrefix}Lịch uống thuốc: ${med.name}`,
-        body: `Đến giờ cữ ${med.time} (${med.dosage}). Vui lòng uống thuốc đúng giờ.`,
+        body: `Cữ ${med.time} (${med.dosage}). Vui lòng uống thuốc và nhấn Xác nhận đã uống.`,
         tag: `med-${med.id}-${today}`,
         vibrate: vibration,
         data: {
@@ -270,6 +296,102 @@ async function checkAndSendReminders() {
 }
 
 // ---------------- REST APIs ----------------
+
+// Admin Panel Route
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Admin API: Get status & girlfriend progress
+app.get('/api/admin/status', (req, res) => {
+  const vnTime = getVNTime();
+  const currentTime = getCurrentTimeString();
+  const currentMinutes = getMinutesFromTimeString(currentTime);
+  const today = getTodayString();
+  const meds = readJSON(MEDS_FILE, []);
+  const logs = readJSON(LOGS_FILE, []);
+  const escalation = readJSON(ESCALATION_FILE, defaultEscalation);
+  const subscriptions = readJSON(SUBS_FILE, []);
+
+  const todayMeds = meds
+    .filter(m => m.active && isMedicationScheduledForToday(m, vnTime))
+    .map(med => {
+      const todayLog = logs.find(l => l.medicationId === med.id && l.date === today && l.status === 'TAKEN');
+      const medMinutes = getMinutesFromTimeString(med.time);
+      const diffMinutes = currentMinutes - medMinutes;
+      const isTaken = !!todayLog;
+      const isOverdue = !isTaken && diffMinutes > 0;
+
+      let urgencyState = 'Đúng giờ';
+      if (isTaken) {
+        urgencyState = `Đã uống (${todayLog.takenAt})`;
+      } else if (diffMinutes < 0) {
+        urgencyState = `Chưa đến cữ (còn ${Math.abs(diffMinutes)} phút)`;
+      } else if (diffMinutes === 0) {
+        urgencyState = 'Đang đến cữ';
+      } else if (diffMinutes < 10) {
+        urgencyState = `Đang chờ chặng 1 (sau ${10 - diffMinutes}p sẽ nhắc lại)`;
+      } else if (diffMinutes < 15) {
+        urgencyState = `Chặng 1 (sau ${15 - diffMinutes}p sẽ nhắc tiếp)`;
+      } else if (diffMinutes < 17) {
+        urgencyState = `Chặng 2 (sau ${17 - diffMinutes}p sẽ nhắc tiếp)`;
+      } else if (diffMinutes <= (escalation.maxDuration || 45)) {
+        urgencyState = `🚨 Chặng khẩn cấp (Đang bắn 1 lần / phút)`;
+      } else {
+        urgencyState = 'Quá hạn tối đa';
+      }
+
+      return {
+        ...med,
+        isTaken,
+        takenAt: todayLog ? todayLog.takenAt : null,
+        isOverdue,
+        diffMinutes: Math.max(0, diffMinutes),
+        urgencyState
+      };
+    });
+
+  res.json({
+    date: today,
+    currentTime,
+    totalDevices: subscriptions.length,
+    escalation,
+    todayMeds
+  });
+});
+
+// Admin API: Update Escalation Config
+app.post('/api/admin/escalation-config', (req, res) => {
+  const current = readJSON(ESCALATION_FILE, defaultEscalation);
+  const updated = {
+    ...current,
+    ...req.body
+  };
+  writeJSON(ESCALATION_FILE, updated);
+  res.json({ success: true, escalation: updated });
+});
+
+// Admin API: Boyfriend manual instant nudge
+app.post('/api/admin/nudge', async (req, res) => {
+  const { message } = req.body;
+  const currentTime = getCurrentTimeString();
+  const nudgeText = message || 'Anh nhắc em nè: mau uống thuốc đúng cữ nha!';
+
+  const payload = {
+    title: 'Lời nhắc từ bạn trai 💬',
+    body: `${nudgeText} (${currentTime})`,
+    tag: `nudge-${Date.now()}`,
+    vibrate: [300, 100, 300, 100, 500],
+    data: { url: '/' }
+  };
+
+  const result = await broadcastPush(payload);
+  res.json({
+    success: true,
+    sentTo: result.sent,
+    message: nudgeText
+  });
+});
 
 // 1. Get VAPID public key
 app.get('/api/vapid-key', (req, res) => {
