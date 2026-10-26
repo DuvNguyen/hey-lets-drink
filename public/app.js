@@ -252,8 +252,7 @@ async function loadMedications() {
       heroProgressText.textContent = `${completedToday}/${totalToday}`;
       heroProgressBar.style.width = `${progressPercent}%`;
 
-      heroTotalText.textContent = totalCompletedAllTime;
-      heroStreakText.textContent = `Chuỗi ${streakDays} ngày`;
+      renderStreakFlame(streakDays);
 
       if (nextDose) {
         heroNextTime.textContent = nextDose.time;
@@ -275,6 +274,120 @@ async function loadMedications() {
     console.error('Error loading medications:', err);
     todayMedList.innerHTML = '<div style="padding: 16px; color: var(--status-missed-text); font-size: 13px;">Không thể tải dữ liệu.</div>';
   }
+}
+
+// ----------------------------------------------------
+// TikTok Streak Flame SVGs & Tier Progression
+// Tier 0 (< 3d): Mầm lửa nhen nhóm
+// Tier 1 (3-9d): Lửa vàng rực rỡ (TikTok Yellow Flame)
+// Tier 2 (10-19d): Lửa cam bùng cháy (TikTok Blazing Orange)
+// Tier 3 (20d+): Lửa tím huyền thoại (TikTok Mythic Violet)
+// ----------------------------------------------------
+const STREAK_FLAME_SVGS = {
+  tier0: `<svg viewBox="0 0 24 24" fill="none">
+    <defs>
+      <linearGradient id="flame-g0" x1="12" y1="3" x2="12" y2="21" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#FBBF24"/>
+        <stop offset="100%" stop-color="#F59E0B"/>
+      </linearGradient>
+    </defs>
+    <path d="M12 4C11.2 6.5 10 8 8.5 9.5C7 11 6 12.8 6 14.8C6 18.2 8.7 20.5 12 20.5C15.3 20.5 18 18.2 18 14.8C18 11.8 16 9.8 14.5 8C14.2 10 13 11 12 11C11.5 9 12.5 6.5 12 4Z" fill="url(#flame-g0)" opacity="0.75"/>
+    <path d="M12 13C11.2 13 10 14 10 15.5C10 16.9 10.9 18 12 18C13.1 18 14 16.9 14 15.5C14 14.2 12.8 13.5 12 13Z" fill="#FFFBEB"/>
+  </svg>`,
+
+  tier1: `<svg viewBox="0 0 24 24" fill="none">
+    <defs>
+      <linearGradient id="flame-g1-outer" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#FFE600"/>
+        <stop offset="60%" stop-color="#FFA000"/>
+        <stop offset="100%" stop-color="#FF5722"/>
+      </linearGradient>
+      <linearGradient id="flame-g1-inner" x1="12" y1="9" x2="12" y2="21" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#FFFFFF"/>
+        <stop offset="100%" stop-color="#FFF176"/>
+      </linearGradient>
+    </defs>
+    <path d="M12 2C11 5.2 9.2 7.2 7.2 9.2C5.5 11 4.5 13.2 4.5 15.6C4.5 19.6 7.8 22 12 22C16.2 22 19.5 19.6 19.5 15.6C19.5 12.2 17.2 9.8 15.2 7.8C14.8 10.2 13.2 11.5 12 11.5C11.5 9 12.8 5.8 12 2Z" fill="url(#flame-g1-outer)"/>
+    <path d="M12 11C10.8 11 9 12.8 9 15.2C9 17.5 10.3 19.5 12 19.5C13.7 19.5 15 17.5 15 15.2C15 13.2 13.5 12 12 11Z" fill="url(#flame-g1-inner)"/>
+  </svg>`,
+
+  tier2: `<svg viewBox="0 0 24 24" fill="none">
+    <defs>
+      <linearGradient id="flame-g2-outer" x1="12" y1="1" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#FF3D00"/>
+        <stop offset="40%" stop-color="#FF1744"/>
+        <stop offset="100%" stop-color="#D50000"/>
+      </linearGradient>
+      <linearGradient id="flame-g2-mid" x1="12" y1="5" x2="12" y2="21" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#FFEA00"/>
+        <stop offset="60%" stop-color="#FF9100"/>
+        <stop offset="100%" stop-color="#FF3D00"/>
+      </linearGradient>
+      <linearGradient id="flame-g2-inner" x1="12" y1="10" x2="12" y2="20" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#FFFFFF"/>
+        <stop offset="100%" stop-color="#FFF9C4"/>
+      </linearGradient>
+    </defs>
+    <path d="M12.5 1.5C11.5 4.5 9.5 6.5 7.5 8.5C5.5 10.5 4 13 4 15.8C4 20 7.5 22.5 12 22.5C16.5 22.5 20 20 20 15.8C20 12.5 18 10 16 8C15.5 10.5 14 11.5 13 11.5C12.5 9 13.5 5 12.5 1.5Z" fill="url(#flame-g2-outer)"/>
+    <path d="M12 5.5C11.2 7.8 9.8 9.5 8.5 11C7.2 12.5 6.5 14 6.5 16C6.5 19 9 20.8 12 20.8C15 20.8 17.5 19 17.5 16C17.5 13.8 16 12 14.5 10.5C14.2 12 13 13 12 13C11.8 11.2 12.5 8 12 5.5Z" fill="url(#flame-g2-mid)"/>
+    <path d="M12 12C11 12 9.5 13.5 9.5 15.5C9.5 17.5 10.6 19 12 19C13.4 19 14.5 17.5 14.5 15.5C14.5 13.8 13.2 12.8 12 12Z" fill="url(#flame-g2-inner)"/>
+  </svg>`,
+
+  tier3: `<svg viewBox="0 0 24 24" fill="none">
+    <defs>
+      <linearGradient id="flame-g3-outer" x1="12" y1="1" x2="12" y2="23" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#00F0FF"/>
+        <stop offset="30%" stop-color="#7928CA"/>
+        <stop offset="70%" stop-color="#FF0080"/>
+        <stop offset="100%" stop-color="#7928CA"/>
+      </linearGradient>
+      <linearGradient id="flame-g3-mid" x1="12" y1="4" x2="12" y2="21" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#FFF0F5"/>
+        <stop offset="40%" stop-color="#FF4081"/>
+        <stop offset="100%" stop-color="#7C4DFF"/>
+      </linearGradient>
+      <linearGradient id="flame-g3-inner" x1="12" y1="9" x2="12" y2="19" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#FFFFFF"/>
+        <stop offset="100%" stop-color="#E0F7FA"/>
+      </linearGradient>
+    </defs>
+    <path d="M12.5 1C11.2 4.2 9 6.5 6.8 8.8C4.5 11 3 13.8 3 16.8C3 21.2 7 23.5 12 23.5C17 23.5 21 21.2 21 16.8C21 13 18.8 10.2 16.5 8C16 10.8 14.2 12 13 12C12.5 9.2 13.8 5 12.5 1Z" fill="url(#flame-g3-outer)"/>
+    <path d="M12 5C11 7.5 9.5 9.5 8 11.2C6.8 12.8 6 14.5 6 16.5C6 19.8 8.7 21.5 12 21.5C15.3 21.5 18 19.8 18 16.5C18 14 16.5 12 14.8 10.5C14.5 12.2 13.2 13.2 12 13.2C11.8 11 12.8 7.5 12 5Z" fill="url(#flame-g3-mid)"/>
+    <path d="M12 11.5C10.8 11.5 9 13.2 9 15.5C9 17.8 10.3 19.5 12 19.5C13.7 19.5 15 17.8 15 15.5C15 13.5 13.5 12.5 12 11.5Z" fill="url(#flame-g3-inner)"/>
+  </svg>`
+};
+
+function renderStreakFlame(streakDays) {
+  const flameWrap = document.getElementById('hero-streak-flame');
+  const streakCount = document.getElementById('hero-total-text');
+  const streakSub = document.getElementById('hero-streak-text');
+  if (!flameWrap || !streakCount || !streakSub) return;
+
+  const count = Number(streakDays) || 0;
+  streakCount.textContent = count;
+
+  let tier = 0;
+  let subLabel = 'Chuỗi 0 ngày';
+
+  if (count >= 20) {
+    tier = 3;
+    subLabel = `Huyền thoại · ${count} ngày`;
+  } else if (count >= 10) {
+    tier = 2;
+    subLabel = `Bùng cháy · ${count} ngày`;
+  } else if (count >= 3) {
+    tier = 1;
+    subLabel = `Rực lửa · ${count} ngày`;
+  } else if (count > 0) {
+    tier = 0;
+    subLabel = `Mầm lửa · ${count} ngày`;
+  }
+
+  flameWrap.className = `streak-flame-icon streak-tier-${tier}`;
+  flameWrap.innerHTML = STREAK_FLAME_SVGS[`tier${tier}`];
+
+  streakCount.className = `metric-value streak-color-${tier}`;
+  streakSub.textContent = subLabel;
 }
 
 // Render Tab 1: Today Schedule
