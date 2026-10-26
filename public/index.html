@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Hey Let's Drink</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="theme-color" content="#3165F5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Hey Let's Drink">
+  
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-title">Hey Let's Drink</div>
+      <div id="device-status" class="status-pill">
+        <span class="status-dot"></span>
+        <span id="status-text">Đang kết nối...</span>
+      </div>
+    </header>
+
+    <!-- BVIS Concept 3-Column Hero Metric Card -->
+    <section class="hero-metric-card">
+      <div class="metric-col">
+        <span class="metric-label">Đã Uống Hôm Nay</span>
+        <span id="hero-progress-text" class="metric-value">0/0</span>
+        <div class="progress-track">
+          <div id="hero-progress-bar" class="progress-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+      <div class="metric-col">
+        <span class="metric-label">Tổng Hoàn Thành</span>
+        <span id="hero-total-text" class="metric-value">0</span>
+        <span id="hero-streak-text" class="metric-subtext">Chuỗi 0 ngày</span>
+      </div>
+      <div class="metric-col">
+        <span class="metric-label">Cữ Kế Tiếp</span>
+        <span id="hero-next-time" class="metric-value">--:--</span>
+        <span id="hero-next-name" class="metric-subtext">Chưa có</span>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" data-tab="tab-today">Hôm Nay</button>
+      <button class="tab-btn" data-tab="tab-schedule">Cài Đặt Lịch</button>
+      <button class="tab-btn" data-tab="tab-voice">Giọng Nói AI</button>
+      <button class="tab-btn" data-tab="tab-device">Thiết Bị</button>
+    </nav>
+
+    <!-- ================= TAB 1: HÔM NAY ================= -->
+    <main id="tab-today" class="tab-panel active">
+      <div class="section-header">
+        <span class="section-title">Lịch Cần Uống Hôm Nay</span>
+        <span id="current-date-display" style="font-size: 12px; color: var(--text-muted);"></span>
+      </div>
+      <div id="today-medication-list" class="medication-list">
+        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+          Đang tải lịch hôm nay...
+        </div>
+      </div>
+    </main>
+
+    <!-- ================= TAB 2: CÀI ĐẶT LỊCH (GOOGLE CALENDAR STYLE) ================= -->
+    <main id="tab-schedule" class="tab-panel">
+      <div class="recurrence-box">
+        <div class="section-header">
+          <span class="section-title" style="margin-bottom: 0;">Thêm Cữ Thuốc Mới</span>
+        </div>
+        <form id="add-med-form" style="margin-top: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="med-name">Tên thuốc</label>
+            <input type="text" id="med-name" class="form-input" placeholder="Ví dụ: Panadol Extra, Viên sắt, Canxi..." required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="med-dosage">Liều dùng</label>
+              <input type="text" id="med-dosage" class="form-input" placeholder="Ví dụ: 1 viên sau ăn">
+            </div>
+            <div class="form-group" style="width: 120px;">
+              <label class="form-label" for="med-time">Giờ nhắc</label>
+              <input type="time" id="med-time" class="form-input" required>
+            </div>
+          </div>
+
+          <!-- Recurrence Frequency (Google Calendar Style) -->
+          <div class="form-group">
+            <label class="form-label" for="med-freq">Tần suất lặp lại</label>
+            <select id="med-freq" class="form-select">
+              <option value="daily">Hàng ngày (Daily)</option>
+              <option value="weekly">Hàng tuần (Weekly - chọn thứ)</option>
+              <option value="monthly">Hàng tháng (Monthly - chọn ngày)</option>
+            </select>
+          </div>
+
+          <!-- Weekly Day Picker (T2 -> CN) -->
+          <div id="weekly-picker" class="form-group" style="display: none;">
+            <label class="form-label">Chọn các ngày trong tuần</label>
+            <div class="day-selector">
+              <div class="day-chip" data-day="1">T2</div>
+              <div class="day-chip" data-day="2">T3</div>
+              <div class="day-chip" data-day="3">T4</div>
+              <div class="day-chip" data-day="4">T5</div>
+              <div class="day-chip" data-day="5">T6</div>
+              <div class="day-chip" data-day="6">T7</div>
+              <div class="day-chip" data-day="7">CN</div>
+            </div>
+          </div>
+
+          <!-- Monthly Day Picker -->
+          <div id="monthly-picker" class="form-group" style="display: none;">
+            <label class="form-label" for="med-month-day">Ngày trong tháng (1 - 31)</label>
+            <input type="number" id="med-month-day" class="form-input" min="1" max="31" placeholder="Ví dụ: 15">
+          </div>
+
+          <button type="submit" class="btn-primary" style="margin-top: 8px;">Lưu Cữ Thuốc</button>
+        </form>
+      </div>
+
+      <div class="section-header">
+        <span class="section-title">Tất Cả Các Cữ Thuốc Đang Quản Lý</span>
+      </div>
+      <div id="all-medication-list" class="medication-list">
+        <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">
+          Đang tải danh sách...
+        </div>
+      </div>
+    </main>
+
+    <!-- ================= TAB 3: GIỌNG NÓI AI (VOICE TO JSON) ================= -->
+    <main id="tab-voice" class="tab-panel">
+      <div class="voice-container">
+        <div class="brand-title" style="font-size: 16px; margin-bottom: 4px;">Nhập Bằng Giọng Nói AI</div>
+        <p style="font-size: 13px; color: var(--text-muted); max-width: 320px;">
+          Bấm mic và nói tự nhiên (ví dụ: <em>"Nhắc em uống canxi sau ăn sáng lúc 8 giờ thứ hai và thứ sáu"</em>).
+        </p>
+
+        <div class="mic-wrapper">
+          <button id="btn-mic" class="btn-mic" title="Bắt đầu thu âm">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            </svg>
+          </button>
+        </div>
+        <div id="voice-status" class="voice-status-text">Chạm vào micro để nói</div>
+
+        <!-- Live transcript -->
+        <div id="transcript-box" class="transcript-box empty">
+          Nội dung thu âm sẽ xuất hiện ở đây...
+        </div>
+
+        <button id="btn-ai-parse" class="btn-primary" style="display: none; margin-bottom: 12px;">
+          Gemini AI Phân Tích & Điền Lịch
+        </button>
+
+        <!-- AI Preview Card -->
+        <div id="ai-preview" class="ai-preview-card">
+          <h4>Kết quả AI trích xuất (JSON):</h4>
+          <div class="ai-preview-grid">
+            <span class="label">Tên thuốc:</span><strong id="ai-name">-</strong>
+            <span class="label">Liều dùng:</span><span id="ai-dosage">-</span>
+            <span class="label">Giờ nhắc:</span><strong id="ai-time">-</strong>
+            <span class="label">Tần suất:</span><span id="ai-freq">-</span>
+          </div>
+          <button id="btn-save-ai" class="btn-primary" style="margin-top: 12px;">Lưu Cữ Thuốc Này</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ================= TAB 4: THIẾT BỊ & THÔNG BÁO ================= -->
+    <main id="tab-device" class="tab-panel">
+      <!-- iOS Guide -->
+      <div id="ios-guide" class="ios-guide-box" style="display: none;">
+        <strong>Kích hoạt thông báo trên iPhone (iOS 16.4+):</strong>
+        <p>Để nhận thông báo khi khóa màn hình:</p>
+        <ol>
+          <li>Bấm nút <strong>Chia sẻ (Share) ⎋</strong> ở thanh dưới Safari.</li>
+          <li>Chọn <strong>"Thêm vào Màn hình chính" (Add to Home Screen)</strong>.</li>
+          <li>Mở app từ Màn hình chính và nhấn <strong>Bật thông báo</strong>.</li>
+        </ol>
+      </div>
+
+      <!-- Permission Banner -->
+      <div id="permission-banner" class="permission-banner" style="display: none;">
+        <div>
+          <strong>Chưa kích hoạt thông báo</strong>
+          <p>Bật thông báo để điện thoại rung chuông nhắc nhở đúng cữ uống thuốc.</p>
+        </div>
+        <button id="btn-enable-noti" class="permission-btn">Bật thông báo ngay</button>
+      </div>
+
+      <div class="device-card">
+        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Kiểm tra kết nối thông báo</div>
+        <p style="font-size: 13px; color: var(--text-muted);">
+          Gửi thử một thông báo ngay lập tức để kiểm tra điện thoại có rung chuông và hiện banner màn hình khóa không.
+        </p>
+        <button id="btn-test-push" class="btn-secondary">Gửi thử thông báo</button>
+      </div>
+
+      <div class="device-card">
+        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Hệ thống hẹn giờ Free Tier</div>
+        <p style="font-size: 13px; color: var(--text-muted);">
+          Múi giờ máy chủ: <strong>Asia/Ho_Chi_Minh</strong><br>
+          Tích hợp webhook tự động chống ngủ đông cho máy chủ miễn phí:
+          <code style="display:block; margin-top:6px; font-size:12px; background:var(--surface-subtle); padding:6px; border-radius:4px;">
+            GET /api/cron-trigger
+          </code>
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

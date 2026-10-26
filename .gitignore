@@ -1,0 +1,6 @@
+node_modules
+data/subscriptions.json
+data/logs.json
+data/vapid.json
+.DS_Store
+.env
