@@ -88,7 +88,10 @@ async function broadcastPush(payload) {
 
   for (const sub of subscriptions) {
     try {
-      await webpush.sendNotification(sub, JSON.stringify(payload));
+      await webpush.sendNotification(sub, JSON.stringify(payload), {
+        TTL: 86400,
+        urgency: 'high'
+      });
       sent++;
     } catch (err) {
       failed++;
@@ -649,7 +652,10 @@ app.post('/api/test-push', async (req, res) => {
       // Also ensure it is saved in database/storage
       await db.addSubscription(req.body.subscription, req.headers['user-agent'] || '');
 
-      await webpush.sendNotification(req.body.subscription, JSON.stringify(payload));
+      await webpush.sendNotification(req.body.subscription, JSON.stringify(payload), {
+        TTL: 86400,
+        urgency: 'high'
+      });
       return res.json({
         status: 'sent',
         details: { sent: 1, failed: 0 }

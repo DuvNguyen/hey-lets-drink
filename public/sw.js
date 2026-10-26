@@ -1,5 +1,5 @@
 // Service Worker for Hey Let's Drink PWA
-const CACHE_NAME = 'hey-lets-drink-v1';
+const CACHE_NAME = 'hey-lets-drink-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -12,7 +12,7 @@ self.addEventListener('activate', (event) => {
 // Listen for Push event from server
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'Lịch uống thuốc',
+    title: "Hey Let's Drink",
     body: 'Đến giờ uống thuốc theo lịch hẹn.',
     tag: 'med-reminder',
     data: { url: '/' }
@@ -26,31 +26,27 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  // Base options supported by Apple iOS WebKit (iOS strictly dislikes 'actions' & 'vibrate' in Web Push)
   const options = {
-    body: data.body,
+    body: data.body || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     tag: data.tag || 'med-reminder',
-    renotify: true,
-    vibrate: [200, 100, 200],
-    data: data.data || { url: '/' },
-    actions: [
+    data: data.data || { url: '/' }
+  };
+
+  // Only add action buttons and vibration on non-iOS browsers (Android/Desktop)
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (!isIOS) {
+    options.vibrate = [200, 100, 200];
+    options.actions = [
       { action: 'take', title: 'Xác nhận đã uống' },
       { action: 'close', title: 'Đóng' }
-    ]
-  };
+    ];
+  }
 
   event.waitUntil(
     self.registration.showNotification(data.title, options)
-      .catch((err) => {
-        console.warn('[SW] showNotification with actions failed, retrying simple notification for iOS:', err);
-        return self.registration.showNotification(data.title, {
-          body: data.body,
-          icon: '/icons/icon-192.png',
-          badge: '/icons/icon-192.png',
-          data: data.data || { url: '/' }
-        });
-      })
   );
 });
 

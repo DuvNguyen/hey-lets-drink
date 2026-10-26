@@ -155,7 +155,8 @@ async function initServiceWorker() {
 
   try {
     swRegistration = await navigator.serviceWorker.register('/sw.js');
-    console.log('[SW] Registered successfully');
+    await swRegistration.update().catch(() => {});
+    console.log('[SW] Registered & updated successfully');
   } catch (err) {
     console.error('[SW Registration Error]', err);
     updateStatus(false, 'Lỗi đăng ký Service Worker');
