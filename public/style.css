@@ -72,7 +72,7 @@ body {
   max-width: 100%;
   overflow-x: hidden;
   min-height: 100dvh;
-  padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 24px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 24px) + 32px);
 }
 
 /* App Container */
@@ -83,7 +83,7 @@ body {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  padding: 12px 14px 32px;
+  padding: 12px 14px calc(env(safe-area-inset-bottom, 24px) + 72px);
   overflow-x: hidden;
 }
 
@@ -591,25 +591,43 @@ input[type="time"] {
 
 .btn-primary {
   width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background: var(--sd-blue);
   color: #FFFFFF;
   border: none;
   font-size: 14px;
   font-weight: 600;
-  padding: 11px 16px;
-  border-radius: var(--radius-xs);
+  letter-spacing: -0.01em;
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  min-height: 44px;
+  min-height: 46px;
+  box-shadow: 0 4px 14px rgba(49, 101, 245, 0.25);
   transition: background var(--dur-fast) var(--ease-standard),
+              box-shadow var(--dur-fast) var(--ease-standard),
               transform var(--dur-fast) var(--ease-standard);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-primary:hover {
   background: var(--sd-blue-hover);
+  box-shadow: 0 6px 18px rgba(49, 101, 245, 0.32);
 }
 
 .btn-primary:active {
   transform: scale(0.97);
+  box-shadow: 0 2px 6px rgba(49, 101, 245, 0.2);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* ===================================================
@@ -797,20 +815,138 @@ input[type="time"] {
   gap: 12px;
 }
 
-.btn-secondary {
+/* Header Actions (Status pill + Gear button) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-icon-gear {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: var(--surface-card);
-  color: var(--text-body);
   border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-body);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--dur-fast) var(--ease-standard);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-icon-gear:hover {
+  background: var(--surface-subtle);
+  color: var(--sd-blue);
+  border-color: var(--border-strong);
+}
+
+.btn-icon-gear:active {
+  transform: scale(0.92);
+}
+
+/* Custom Toggle Switch (iOS / Saigon Digital style) */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-strong);
+  transition: background-color var(--dur-fast) var(--ease-standard);
+  border-radius: var(--radius-pill);
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #FFFFFF;
+  transition: transform var(--dur-fast) var(--ease-standard);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--sd-blue);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* Toast Notification (In-App Feedback) */
+.toast-notification {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 20px) + 20px);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #0F172A;
+  color: #FFFFFF;
+  padding: 12px 20px;
+  border-radius: var(--radius-pill);
   font-size: 13px;
   font-weight: 500;
-  padding: 10px 14px;
-  border-radius: var(--radius-xs);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 9999;
+  opacity: 0;
+  transition: all var(--dur-base) var(--ease-out);
+  pointer-events: none;
+  max-width: 90vw;
+  text-align: center;
+}
+
+.toast-notification.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.btn-secondary {
+  background: var(--surface-card);
+  color: var(--text-heading);
+  border: 1px solid var(--border-subtle);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 15px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  box-shadow: var(--shadow-xs);
   transition: all var(--dur-fast) var(--ease-standard);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-secondary:hover {
   background: var(--surface-subtle);
+  border-color: var(--border-strong);
 }
 
 .btn-secondary:active {

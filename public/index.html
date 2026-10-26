@@ -24,9 +24,17 @@
         <img src="/image/logo.png" alt="Logo" class="app-brand-logo">
         <div class="brand-title">Hey Let's Drink</div>
       </div>
-      <div id="device-status" class="status-pill">
-        <span class="status-dot"></span>
-        <span id="status-text">Đang kết nối...</span>
+      <div class="header-actions">
+        <div id="device-status" class="status-pill">
+          <span class="status-dot"></span>
+          <span id="status-text">Đang kết nối...</span>
+        </div>
+        <button id="btn-settings-gear" class="btn-icon-gear" aria-label="Cài đặt thiết bị" title="Cài đặt & Thiết bị">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -62,12 +70,11 @@
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
+    <!-- Navigation Tabs (Clean 3-Tab Bar) -->
     <nav class="tab-bar">
       <button class="tab-btn active" data-tab="tab-today">Hôm Nay</button>
       <button class="tab-btn" data-tab="tab-schedule">Lịch Thuốc</button>
       <button class="tab-btn" data-tab="tab-voice">Giọng Nói</button>
-      <button class="tab-btn" data-tab="tab-device">Thiết Bị</button>
     </nav>
 
     <!-- ================= TAB 1: HÔM NAY ================= -->
@@ -197,6 +204,10 @@
 
     <!-- ================= TAB 4: THIẾT BỊ & CÀI ĐẶT THÔNG BÁO ================= -->
     <main id="tab-device" class="tab-panel">
+      <div class="section-header" style="margin-bottom: 14px;">
+        <span class="section-title">Cài Đặt & Thiết Bị</span>
+        <button id="btn-close-settings" class="btn-secondary" style="padding: 6px 12px; font-size: 12px;">← Quay lại</button>
+      </div>
       <!-- iOS Guide -->
       <div id="ios-guide" class="ios-guide-box" style="display: none;">
         <strong>Kích hoạt thông báo trên iPhone (iOS 16.4+):</strong>

@@ -91,11 +91,35 @@ function setupTabs() {
       if (panel) panel.classList.add('active');
     });
   });
+
+  // Gear button to open Settings & Device panel
+  const btnSettingsGear = document.getElementById('btn-settings-gear');
+  if (btnSettingsGear) {
+    btnSettingsGear.addEventListener('click', () => {
+      switchToTab('tab-device');
+    });
+  }
+
+  // Close Settings button to return to Today panel
+  const btnCloseSettings = document.getElementById('btn-close-settings');
+  if (btnCloseSettings) {
+    btnCloseSettings.addEventListener('click', () => {
+      switchToTab('tab-today');
+    });
+  }
 }
 
 function switchToTab(tabId) {
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabPanels = document.querySelectorAll('.tab-panel');
+  tabBtns.forEach(b => b.classList.remove('active'));
+  tabPanels.forEach(p => p.classList.remove('active'));
+
   const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-  if (btn) btn.click();
+  if (btn) btn.classList.add('active');
+
+  const panel = document.getElementById(tabId);
+  if (panel) panel.classList.add('active');
 }
 
 // ----------------------------------------------------
@@ -630,6 +654,92 @@ function setupEventHandlers() {
       btnTestPush.disabled = false;
     }
   });
+
+  // Sound Preview (Web Audio API Synthesizer)
+  const btnPreviewSound = document.getElementById('btn-preview-sound');
+  const soundSelect = document.getElementById('setting-sound');
+  if (btnPreviewSound && soundSelect) {
+    btnPreviewSound.addEventListener('click', () => {
+      playTone(soundSelect.value);
+    });
+  }
+
+  // Save Notification Settings
+  const btnSaveSettings = document.getElementById('btn-save-settings');
+  const densitySelect = document.getElementById('setting-density');
+  const vibrationSelect = document.getElementById('setting-vibration');
+  if (btnSaveSettings) {
+    btnSaveSettings.addEventListener('click', async () => {
+      btnSaveSettings.textContent = 'Đang lưu...';
+      btnSaveSettings.disabled = true;
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sound: soundSelect ? soundSelect.value : 'chime',
+            density: densitySelect ? densitySelect.value : 'double',
+            vibration: vibrationSelect ? vibrationSelect.value : 'standard'
+          })
+        });
+        if (res.ok) {
+          btnSaveSettings.textContent = 'Đã lưu cài đặt!';
+          setTimeout(() => {
+            btnSaveSettings.textContent = 'Lưu Cài Đặt Thông Báo';
+            btnSaveSettings.disabled = false;
+          }, 2000);
+        }
+      } catch (err) {
+        console.error('Error saving settings:', err);
+        btnSaveSettings.textContent = 'Lưu Cài Đặt Thông Báo';
+        btnSaveSettings.disabled = false;
+      }
+    });
+  }
+}
+
+// Web Audio API Synthesizer Chimes
+function playTone(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'bell') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+      osc.start();
+      osc.stop(ctx.currentTime + 1.2);
+    } else if (type === 'ping') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1046.5, ctx.currentTime);
+      gain.gain.setValueAtTime(0.4, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.6);
+    } else if (type === 'alert') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(750, ctx.currentTime);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } else {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.9);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.9);
+    }
+  } catch (e) {
+    console.warn('AudioContext not allowed or supported', e);
+  }
 }
 
 // Utility: Prevent XSS
