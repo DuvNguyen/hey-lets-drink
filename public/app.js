@@ -311,49 +311,49 @@ const STREAK_FLAME_SVGS = {
     <path d="M12 11C10.8 11 9 12.8 9 15.2C9 17.5 10.3 19.5 12 19.5C13.7 19.5 15 17.5 15 15.2C15 13.2 13.5 12 12 11Z" fill="url(#flame-g1-inner)"/>
   </svg>`,
 
-  tier2: `<svg viewBox="0 0 24 24" fill="none">
+  tier2: `<svg viewBox="0 0 100 100" fill="none">
     <defs>
-      <linearGradient id="flame-g2-outer" x1="12" y1="1" x2="12" y2="22" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#FF3D00"/>
-        <stop offset="40%" stop-color="#FF1744"/>
-        <stop offset="100%" stop-color="#D50000"/>
+      <linearGradient id="flame-g2-body" x1="50%" y1="0%" x2="50%" y2="100%">
+        <stop offset="0%" stop-color="#FF2A38"/>
+        <stop offset="35%" stop-color="#FF5A00"/>
+        <stop offset="70%" stop-color="#FF8A00"/>
+        <stop offset="100%" stop-color="#FFB800"/>
       </linearGradient>
-      <linearGradient id="flame-g2-mid" x1="12" y1="5" x2="12" y2="21" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#FFEA00"/>
-        <stop offset="60%" stop-color="#FF9100"/>
-        <stop offset="100%" stop-color="#FF3D00"/>
-      </linearGradient>
-      <linearGradient id="flame-g2-inner" x1="12" y1="10" x2="12" y2="20" gradientUnits="userSpaceOnUse">
+      <linearGradient id="flame-g2-core" x1="50%" y1="0%" x2="50%" y2="100%">
         <stop offset="0%" stop-color="#FFFFFF"/>
-        <stop offset="100%" stop-color="#FFF9C4"/>
+        <stop offset="60%" stop-color="#FFF385" stop-opacity="0.95"/>
+        <stop offset="90%" stop-color="#FFB300" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#FF5A00" stop-opacity="0"/>
       </linearGradient>
     </defs>
-    <path d="M12.5 1.5C11.5 4.5 9.5 6.5 7.5 8.5C5.5 10.5 4 13 4 15.8C4 20 7.5 22.5 12 22.5C16.5 22.5 20 20 20 15.8C20 12.5 18 10 16 8C15.5 10.5 14 11.5 13 11.5C12.5 9 13.5 5 12.5 1.5Z" fill="url(#flame-g2-outer)"/>
-    <path d="M12 5.5C11.2 7.8 9.8 9.5 8.5 11C7.2 12.5 6.5 14 6.5 16C6.5 19 9 20.8 12 20.8C15 20.8 17.5 19 17.5 16C17.5 13.8 16 12 14.5 10.5C14.2 12 13 13 12 13C11.8 11.2 12.5 8 12 5.5Z" fill="url(#flame-g2-mid)"/>
-    <path d="M12 12C11 12 9.5 13.5 9.5 15.5C9.5 17.5 10.6 19 12 19C13.4 19 14.5 17.5 14.5 15.5C14.5 13.8 13.2 12.8 12 12Z" fill="url(#flame-g2-inner)"/>
+    <path d="M50 88 C32 88 20 76 19 62 C18 52 23 45 19 40 C18 39 17 40 18 42 C20 48 20 54 24 52 C19 46 19 38 23 30 C24 28 23 28 22 30 C21 34 22 40 26 38 C24 30 27 22 33 15 C34 13 33 13 32 15 C31 19 32 25 38 23 C35 15 40 8 48 2.5 C49 1.5 50 3 49 5 C46 11 45 19 53 19 C50 12 56 6 65 6 C66 6 67 8 66 10 C62 16 63 23 70 21 C68 15 73 11 80 15 C81 16 80 17 79 17 C74 21 74 27 81 28 C79 23 83 22 89 28 C90 29 89 30 88 30 C83 34 84 41 91 39 C88 44 89 50 92 50 C93 50 93 48 92 46 C91 43 94 40 92 36 C91 48 93 58 91 63 C89 77 78 88 50 88 Z" fill="url(#flame-g2-body)"/>
+    <path d="M50 42 C50 42 38 58 38 68 C38 75.5 43.4 81 50 81 C56.6 81 62 75.5 62 68 C62 58 50 42 50 42 Z" fill="url(#flame-g2-core)"/>
+    <path d="M88 42 Q92 42 92 38 Q92 42 96 42 Q92 42 92 46 Q92 42 88 42 Z" fill="#FFE57F"/>
+    <path d="M10 60 Q13 60 13 57 Q13 60 16 60 Q13 60 13 63 Q13 60 10 60 Z" fill="#FFE57F"/>
   </svg>`,
 
-  tier3: `<svg viewBox="0 0 24 24" fill="none">
+  tier3: `<svg viewBox="0 0 100 100" fill="none">
     <defs>
-      <linearGradient id="flame-g3-outer" x1="12" y1="1" x2="12" y2="23" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#00F0FF"/>
-        <stop offset="30%" stop-color="#7928CA"/>
-        <stop offset="70%" stop-color="#FF0080"/>
-        <stop offset="100%" stop-color="#7928CA"/>
+      <linearGradient id="flame-g3-body" x1="50%" y1="0%" x2="50%" y2="100%">
+        <stop offset="0%" stop-color="#9333EA"/>
+        <stop offset="35%" stop-color="#A855F7"/>
+        <stop offset="70%" stop-color="#C084FC"/>
+        <stop offset="100%" stop-color="#F472B6"/>
       </linearGradient>
-      <linearGradient id="flame-g3-mid" x1="12" y1="4" x2="12" y2="21" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#FFF0F5"/>
-        <stop offset="40%" stop-color="#FF4081"/>
-        <stop offset="100%" stop-color="#7C4DFF"/>
-      </linearGradient>
-      <linearGradient id="flame-g3-inner" x1="12" y1="9" x2="12" y2="19" gradientUnits="userSpaceOnUse">
+      <linearGradient id="flame-g3-core" x1="50%" y1="0%" x2="50%" y2="100%">
         <stop offset="0%" stop-color="#FFFFFF"/>
-        <stop offset="100%" stop-color="#E0F7FA"/>
+        <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+        <stop offset="85%" stop-color="#F5D0FE" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="#E879F9" stop-opacity="0"/>
       </linearGradient>
     </defs>
-    <path d="M12.5 1C11.2 4.2 9 6.5 6.8 8.8C4.5 11 3 13.8 3 16.8C3 21.2 7 23.5 12 23.5C17 23.5 21 21.2 21 16.8C21 13 18.8 10.2 16.5 8C16 10.8 14.2 12 13 12C12.5 9.2 13.8 5 12.5 1Z" fill="url(#flame-g3-outer)"/>
-    <path d="M12 5C11 7.5 9.5 9.5 8 11.2C6.8 12.8 6 14.5 6 16.5C6 19.8 8.7 21.5 12 21.5C15.3 21.5 18 19.8 18 16.5C18 14 16.5 12 14.8 10.5C14.5 12.2 13.2 13.2 12 13.2C11.8 11 12.8 7.5 12 5Z" fill="url(#flame-g3-mid)"/>
-    <path d="M12 11.5C10.8 11.5 9 13.2 9 15.5C9 17.8 10.3 19.5 12 19.5C13.7 19.5 15 17.8 15 15.5C15 13.5 13.5 12.5 12 11.5Z" fill="url(#flame-g3-inner)"/>
+    <!-- TikTok DM Milestone Purple Crown Flame (from user screenshot) -->
+    <path d="M50 88 C32 88 20 76 19 62 C18 52 23 45 19 40 C18 39 17 40 18 42 C20 48 20 54 24 52 C19 46 19 38 23 30 C24 28 23 28 22 30 C21 34 22 40 26 38 C24 30 27 22 33 15 C34 13 33 13 32 15 C31 19 32 25 38 23 C35 15 40 8 48 2.5 C49 1.5 50 3 49 5 C46 11 45 19 53 19 C50 12 56 6 65 6 C66 6 67 8 66 10 C62 16 63 23 70 21 C68 15 73 11 80 15 C81 16 80 17 79 17 C74 21 74 27 81 28 C79 23 83 22 89 28 C90 29 89 30 88 30 C83 34 84 41 91 39 C88 44 89 50 92 50 C93 50 93 48 92 46 C91 43 94 40 92 36 C91 48 93 58 91 63 C89 77 78 88 50 88 Z" fill="url(#flame-g3-body)"/>
+    <path d="M50 42 C50 42 38 58 38 68 C38 75.5 43.4 81 50 81 C56.6 81 62 75.5 62 68 C62 58 50 42 50 42 Z" fill="url(#flame-g3-core)"/>
+    <!-- TikTok Diamond Sparkles -->
+    <path d="M88 42 Q92 42 92 38 Q92 42 96 42 Q92 42 92 46 Q92 42 88 42 Z" fill="#F5D0FE"/>
+    <path d="M80 62 Q83 62 83 59 Q83 62 86 62 Q83 62 83 65 Q83 62 80 62 Z" fill="#E879F9"/>
+    <path d="M10 60 Q13 60 13 57 Q13 60 16 60 Q13 60 13 63 Q13 60 10 60 Z" fill="#F5D0FE"/>
   </svg>`
 };
 
