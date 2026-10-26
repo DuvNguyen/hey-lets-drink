@@ -4,3 +4,4 @@ data/logs.json
 data/vapid.json
 .DS_Store
 .env
+.neon

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/candidate.json",
+    "sha256": "49f42925a0479cab27a9d413dd329032e4fb3c4aeb2b8c6cee868dccacf93d82",
+    "bytes": 8696
+  },
+  "artifact": {
+    "path": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.html"
+  },
+  "gates": {
+    "validate": "fail",
+    "deliver": "not-run",
+    "check": "not-run",
+    "browser-check": "not-run"
+  },
+  "failedStage": "validate",
+  "diagnostics": [
+    {
+      "code": "layout/boundary-encloses-non-member",
+      "severity": "error",
+      "message": "Component \"file_store\" is not wrapped by boundary \"Node.js Application Server\" but sits inside its frame — move it outside the frame, place the wrapped members in one compact axis-aligned cluster (no empty bay for a non-member), or add it to wraps only when it truly belongs there.",
+      "subject": {
+        "diagramType": "architecture",
+        "boundary": {
+          "kind": "region",
+          "label": "Node.js Application Server",
+          "wraps": [
+            "web_server",
+            "push_dispatcher",
+            "cron_scheduler"
+          ]
+        },
+        "component": "file_store"
+      },
+      "evidence": {
+        "bounds": {
+          "x": 264,
+          "y": 206,
+          "width": 427,
+          "height": 266
+        },
+        "component": {
+          "id": "file_store",
+          "type": "database",
+          "label": "JSON State Store",
+          "x": 280,
+          "y": 390,
+          "width": 160,
+          "height": 62,
+          "pos": [
+            280,
+            390
+          ]
+        }
+      },
+      "supportedFixes": [
+        "move \"file_store\" outside the boundary frame",
+        "reposition the wrapped members into one compact axis-aligned cluster (no empty bay) that leaves non-members outside"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.finalize.json",
+    "summaryReceipt": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.finalize-summary.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-26T10:07:39.452Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 308,
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  },
+  "nextAction": {
+    "action": "edit-in-place",
+    "candidate": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/candidate.json",
+    "constraint": "Preserve unaffected semantics and geometry; apply each diagnostic's supportedFixes, or the fix its message names, and do not replace the whole candidate.",
+    "then": "finalize-once"
+  }
+}

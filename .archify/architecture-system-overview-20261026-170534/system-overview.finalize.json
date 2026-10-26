@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-10-26T10:07:39.382Z",
+  "specification": {
+    "path": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/candidate.json",
+    "sha256": "49f42925a0479cab27a9d413dd329032e4fb3c4aeb2b8c6cee868dccacf93d82",
+    "bytes": 8696
+  },
+  "artifact": {
+    "path": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.html"
+  },
+  "stages": {
+    "validate": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": null,
+      "command": [
+        "/home/levi/.nvm/versions/node/v22.23.4/bin/node",
+        "/tmp/archify/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/candidate.json",
+        "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/projects/hey-lets-drink",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "deliver",
+        "receiptId": "ce55ef97-4973-49c8-adf1-2698eaa64f23",
+        "stage": "render",
+        "type": "architecture",
+        "input": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/candidate.json",
+        "output": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.html",
+        "error": "Architecture layout validation failed:\n- Component \"file_store\" is not wrapped by boundary \"Node.js Application Server\" but sits inside its frame — move it outside the frame, place the wrapped members in one compact axis-aligned cluster (no empty bay for a non-member), or add it to wraps only when it truly belongs there.",
+        "diagnostics": [
+          {
+            "code": "layout/boundary-encloses-non-member",
+            "severity": "error",
+            "message": "Component \"file_store\" is not wrapped by boundary \"Node.js Application Server\" but sits inside its frame — move it outside the frame, place the wrapped members in one compact axis-aligned cluster (no empty bay for a non-member), or add it to wraps only when it truly belongs there.",
+            "subject": {
+              "diagramType": "architecture",
+              "boundary": {
+                "kind": "region",
+                "label": "Node.js Application Server",
+                "wraps": [
+                  "web_server",
+                  "push_dispatcher",
+                  "cron_scheduler"
+                ]
+              },
+              "component": "file_store"
+            },
+            "evidence": {
+              "bounds": {
+                "x": 264,
+                "y": 206,
+                "width": 427,
+                "height": 266
+              },
+              "component": {
+                "id": "file_store",
+                "type": "database",
+                "label": "JSON State Store",
+                "x": 280,
+                "y": 390,
+                "width": 160,
+                "height": 62,
+                "pos": [
+                  280,
+                  390
+                ]
+              }
+            },
+            "supportedFixes": [
+              "move \"file_store\" outside the boundary frame",
+              "reposition the wrapped members into one compact axis-aligned cluster (no empty bay) that leaves non-members outside"
+            ]
+          }
+        ],
+        "provenance": "absent",
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      },
+      "execution": "embedded-in-deliver"
+    },
+    "deliver": {
+      "status": "not-run",
+      "execution": "blocked-by-validate"
+    }
+  },
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  },
+  "diagnostics": [
+    {
+      "code": "layout/boundary-encloses-non-member",
+      "severity": "error",
+      "message": "Component \"file_store\" is not wrapped by boundary \"Node.js Application Server\" but sits inside its frame — move it outside the frame, place the wrapped members in one compact axis-aligned cluster (no empty bay for a non-member), or add it to wraps only when it truly belongs there.",
+      "subject": {
+        "diagramType": "architecture",
+        "boundary": {
+          "kind": "region",
+          "label": "Node.js Application Server",
+          "wraps": [
+            "web_server",
+            "push_dispatcher",
+            "cron_scheduler"
+          ]
+        },
+        "component": "file_store"
+      },
+      "evidence": {
+        "bounds": {
+          "x": 264,
+          "y": 206,
+          "width": 427,
+          "height": 266
+        },
+        "component": {
+          "id": "file_store",
+          "type": "database",
+          "label": "JSON State Store",
+          "x": 280,
+          "y": 390,
+          "width": 160,
+          "height": 62,
+          "pos": [
+            280,
+            390
+          ]
+        }
+      },
+      "supportedFixes": [
+        "move \"file_store\" outside the boundary frame",
+        "reposition the wrapped members into one compact axis-aligned cluster (no empty bay) that leaves non-members outside"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.finalize.json",
+    "summaryReceipt": "/projects/hey-lets-drink/.archify/architecture-system-overview-20261026-170534/system-overview.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "validate",
+  "finishedAt": "2026-10-26T10:07:39.691Z",
+  "durationMs": 308,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-26T10:07:39.452Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}

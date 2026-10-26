@@ -1,0 +1,339 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Hey Let's Drink - System Architecture",
+    "subtitle": "PWA Web Push Reminders, Anki Escalation & Voice AI Pipeline",
+    "output": ".archify/architecture-system-overview-20261026-170534/system-overview.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "https://github.com/DuvNguyen/hey-lets-drink",
+      "provider": "github",
+      "revision": "17d4ecd51115bde9079cdebe9d0132502661d22d"
+    }
+  },
+  "components": [
+    {
+      "id": "admin_client",
+      "type": "frontend",
+      "label": "Admin Dashboard",
+      "sublabel": "Boyfriend Monitor & Nudge",
+      "icon": "person",
+      "pos": [60, 70],
+      "size": [155, 62],
+      "tag": "Web UI",
+      "sources": [
+        {
+          "path": "public/admin.html",
+          "line": 1,
+          "end_line": 35,
+          "label": "Admin console layout & controls"
+        }
+      ]
+    },
+    {
+      "id": "pwa_client",
+      "type": "frontend",
+      "label": "Medication PWA",
+      "sublabel": "SDv26 UI / Web Speech API",
+      "icon": "frontend",
+      "pos": [280, 70],
+      "size": [160, 62],
+      "tag": "iOS 16.4+ & Android",
+      "sources": [
+        {
+          "path": "public/app.js",
+          "line": 51,
+          "end_line": 60,
+          "label": "PWA lifecycle & tab setup"
+        }
+      ]
+    },
+    {
+      "id": "service_worker",
+      "type": "frontend",
+      "label": "Service Worker",
+      "sublabel": "sw.js / Push Event Handler",
+      "icon": "frontend",
+      "pos": [510, 70],
+      "size": [165, 62],
+      "tag": "Background Worker",
+      "sources": [
+        {
+          "path": "public/sw.js",
+          "line": 13,
+          "end_line": 55,
+          "label": "Push event listener & notification"
+        }
+      ]
+    },
+    {
+      "id": "web_server",
+      "type": "backend",
+      "label": "Express API Server",
+      "sublabel": "REST Endpoints & Router",
+      "icon": "backend",
+      "pos": [280, 230],
+      "size": [160, 62],
+      "tag": "Node.js / Vercel",
+      "sources": [
+        {
+          "path": "server.js",
+          "line": 10,
+          "end_line": 27,
+          "label": "Express server & storage config"
+        },
+        {
+          "path": "server.js",
+          "line": 439,
+          "end_line": 514,
+          "label": "Medication & stats API"
+        }
+      ]
+    },
+    {
+      "id": "push_dispatcher",
+      "type": "backend",
+      "label": "Push Dispatcher",
+      "sublabel": "web-push (RFC 8292)",
+      "icon": "backend",
+      "pos": [510, 230],
+      "size": [165, 62],
+      "tag": "VAPID Auth",
+      "sources": [
+        {
+          "path": "server.js",
+          "line": 80,
+          "end_line": 85,
+          "label": "VAPID contact & key config"
+        },
+        {
+          "path": "server.js",
+          "line": 173,
+          "end_line": 204,
+          "label": "Push broadcaster & cleanup"
+        }
+      ]
+    },
+    {
+      "id": "push_gateways",
+      "type": "external",
+      "label": "APNs & FCM",
+      "sublabel": "OS Push Services",
+      "icon": "cloud",
+      "pos": [740, 230],
+      "size": [155, 62],
+      "tag": "Apple / Google",
+      "sources": [
+        {
+          "path": "server.js",
+          "line": 80,
+          "end_line": 85,
+          "label": "Public URI requirement for APNs"
+        }
+      ]
+    },
+    {
+      "id": "gemini_ai",
+      "type": "external",
+      "label": "Gemini 3.5 Flash Lite",
+      "sublabel": "Speech-to-JSON Parser",
+      "icon": "external",
+      "pos": [60, 390],
+      "size": [155, 62],
+      "tag": "Google AI Studio",
+      "sources": [
+        {
+          "path": "server.js",
+          "line": 616,
+          "end_line": 628,
+          "label": "Gemini API HTTP request"
+        }
+      ]
+    },
+    {
+      "id": "file_store",
+      "type": "database",
+      "label": "JSON State Store",
+      "sublabel": "Meds, Logs & Subscriptions",
+      "icon": "database",
+      "pos": [280, 390],
+      "size": [160, 62],
+      "tag": "data/ or /tmp",
+      "sources": [
+        {
+          "path": "server.js",
+          "line": 51,
+          "end_line": 69,
+          "label": "Atomic readJSON and writeJSON"
+        }
+      ]
+    },
+    {
+      "id": "cron_scheduler",
+      "type": "backend",
+      "label": "Escalation Engine",
+      "sublabel": "node-cron + Anki Spacing",
+      "icon": "clock",
+      "pos": [510, 390],
+      "size": [165, 62],
+      "tag": "Multi-Stage Urgency",
+      "sources": [
+        {
+          "path": "server.js",
+          "line": 218,
+          "end_line": 296,
+          "label": "Overdue dose escalation"
+        },
+        {
+          "path": "server.js",
+          "line": 714,
+          "end_line": 722,
+          "label": "Per-minute cron trigger"
+        }
+      ]
+    },
+    {
+      "id": "cron_keeper",
+      "type": "external",
+      "label": "Cron Keeper",
+      "sublabel": "cron-job.org / Webhook",
+      "icon": "clock",
+      "pos": [740, 390],
+      "size": [155, 62],
+      "tag": "Keep-Alive",
+      "sources": [
+        {
+          "path": "server.js",
+          "line": 702,
+          "end_line": 711,
+          "label": "External cron trigger endpoint"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Client PWA Surface (iOS Safari / Android Chrome)",
+      "wraps": ["admin_client", "pwa_client", "service_worker"],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "Node.js Application Server",
+      "wraps": ["web_server", "push_dispatcher", "cron_scheduler"],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "External Cloud & Gateways",
+      "wraps": ["push_gateways", "cron_keeper"],
+      "pad": 16
+    }
+  ],
+  "connections": [
+    {
+      "id": "admin-to-server",
+      "from": "admin_client",
+      "to": "web_server",
+      "label": "Nudge & config",
+      "variant": "emphasis"
+    },
+    {
+      "id": "pwa-to-server",
+      "from": "pwa_client",
+      "to": "web_server",
+      "label": "HTTPS REST & sync",
+      "variant": "emphasis"
+    },
+    {
+      "id": "sw-to-pwa",
+      "from": "service_worker",
+      "to": "pwa_client",
+      "label": "Open / focus app",
+      "variant": "dashed"
+    },
+    {
+      "id": "server-to-gemini",
+      "from": "web_server",
+      "to": "gemini_ai",
+      "label": "Voice-to-JSON",
+      "variant": "default"
+    },
+    {
+      "id": "server-to-store",
+      "from": "web_server",
+      "to": "file_store",
+      "label": "Persist state",
+      "variant": "default"
+    },
+    {
+      "id": "server-to-dispatcher",
+      "from": "web_server",
+      "to": "push_dispatcher",
+      "label": "Instant push",
+      "variant": "default"
+    },
+    {
+      "id": "cron-to-dispatcher",
+      "from": "cron_scheduler",
+      "to": "push_dispatcher",
+      "label": "Due dose trigger",
+      "variant": "emphasis"
+    },
+    {
+      "id": "dispatcher-to-gateways",
+      "from": "push_dispatcher",
+      "to": "push_gateways",
+      "label": "VAPID signed push",
+      "variant": "security"
+    },
+    {
+      "id": "gateways-to-sw",
+      "from": "push_gateways",
+      "to": "service_worker",
+      "label": "OS push dispatch",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "right"
+    },
+    {
+      "id": "keeper-to-scheduler",
+      "from": "cron_keeper",
+      "to": "cron_scheduler",
+      "label": "GET /cron-trigger",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Client PWA & Notifications",
+      "items": [
+        "Minimalist PWA built with Saigon Digital SDv26 design principles",
+        "iOS 16.4+ Safari Add-to-Home-Screen & Android Chrome Web Push support",
+        "Service Worker receives background pushes and renders actionable notification buttons"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Server & Anki Escalation",
+      "items": [
+        "Express server deployable to Vercel Serverless or persistent Node runtime",
+        "Anki-inspired spaced escalation: on-time (0m), then 10m, 15m, 17m, and 1m rapid reminders",
+        "External keep-alive endpoint (/api/cron-trigger) maintains scheduling on free serverless tier"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "AI Parsing & Boyfriend Control",
+      "items": [
+        "Realtime speech capture parsed into medication JSON by Gemini 3.5 Flash Lite",
+        "Admin dashboard enables boyfriend to monitor adherence in realtime and send manual instant nudges",
+        "Zero developer account fees via VAPID standard (RFC 8292) over Apple APNs and Google FCM"
+      ]
+    }
+  ]
+}

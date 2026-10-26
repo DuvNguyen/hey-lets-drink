@@ -6,67 +6,11 @@ const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3005;
-const DATA_DIR = process.env.VERCEL ? '/tmp/hey-lets-drink-data' : path.join(__dirname, 'data');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-// Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-// Data file paths
-const VAPID_FILE = path.join(DATA_DIR, 'vapid.json');
-const SUBS_FILE = path.join(DATA_DIR, 'subscriptions.json');
-const MEDS_FILE = path.join(DATA_DIR, 'medications.json');
-const LOGS_FILE = path.join(DATA_DIR, 'logs.json');
-const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
-const ESCALATION_FILE = path.join(DATA_DIR, 'escalation.json');
-
-// Default Notification Settings
-const defaultSettings = {
-  sound: 'chime', // 'chime', 'bell', 'ping', 'pulse'
-  density: 'double', // 'single' (1x), 'double' (2x: 0m, 10m), 'strict' (3x: 0m, 5m, 15m)
-  vibration: 'standard', // 'soft', 'standard', 'urgent'
-  advanceNotice: 0 // 0 = on-time, 5 = 5m before
-};
-
-// Anki Spaced Escalation (Decreasing intervals down to 1 per minute)
-const defaultEscalation = {
-  enabled: true,
-  startInterval: 10,
-  maxDuration: 45, // stops after 45 minutes of overdue
-  customNudgeText: "Anh nhắc em nè: mau uống thuốc đúng cữ nha!"
-};
-
-if (!fs.existsSync(SETTINGS_FILE)) {
-  writeJSON(SETTINGS_FILE, defaultSettings);
-}
-if (!fs.existsSync(ESCALATION_FILE)) {
-  writeJSON(ESCALATION_FILE, defaultEscalation);
-}
-
-// Helper to read JSON safely
-function readJSON(file, defaultValue) {
-  try {
-    if (!fs.existsSync(file)) {
-      fs.writeFileSync(file, JSON.stringify(defaultValue, null, 2));
-      return defaultValue;
-    }
-    const content = fs.readFileSync(file, 'utf8');
-    return JSON.parse(content || '[]');
-  } catch (err) {
-    console.error(`Error reading ${file}:`, err.message);
-    return defaultValue;
-  }
-}
-
-// Helper to write JSON safely
-function writeJSON(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
-}
 
 // Fixed VAPID Keys fallback (Ensures Vercel serverless cold starts never desync)
 const DEFAULT_VAPID_PUBLIC = 'BM2nC4zvoG3c2GWkNr0gVbuyYcPtvQclIKI9fMPHqv_vHg4-44IWT17LzMUFEaxAKQ9F7u9mSl_uzQf-aU9vaSY';
@@ -83,44 +27,6 @@ webpush.setVapidDetails(
   vapidKeys.publicKey,
   vapidKeys.privateKey
 );
-
-// Initialize default medications if empty or outdated
-const defaultMeds = [
-  {
-    id: 'med-1',
-    name: 'Vitamin & Khoáng chất',
-    dosage: '1 viên sau ăn sáng',
-    time: '08:00',
-    frequency: 'daily',
-    daysOfWeek: [],
-    dayOfMonth: null,
-    active: true
-  },
-  {
-    id: 'med-2',
-    name: 'Uống nước ấm',
-    dosage: 'Ly 350ml',
-    time: '14:00',
-    frequency: 'daily',
-    daysOfWeek: [],
-    dayOfMonth: null,
-    active: true
-  },
-  {
-    id: 'med-3',
-    name: 'Sắt & Canxi',
-    dosage: '1 viên sau ăn tối',
-    time: '20:00',
-    frequency: 'weekly',
-    daysOfWeek: [1, 2, 3, 4, 5],
-    dayOfMonth: null,
-    active: true
-  }
-];
-
-if (!fs.existsSync(MEDS_FILE)) {
-  writeJSON(MEDS_FILE, defaultMeds);
-}
 
 // Middleware
 app.use(cors());
@@ -171,7 +77,7 @@ function isMedicationScheduledForToday(med, vnTime = getVNTime()) {
 
 // Push Notification Dispatcher
 async function broadcastPush(payload) {
-  const subscriptions = readJSON(SUBS_FILE, []);
+  const subscriptions = await db.getSubscriptions();
   if (!subscriptions.length) {
     console.log('[Push] No active subscriptions found.');
     return { sent: 0, failed: 0 };
@@ -179,25 +85,19 @@ async function broadcastPush(payload) {
 
   let sent = 0;
   let failed = 0;
-  const activeSubs = [];
 
   for (const sub of subscriptions) {
     try {
       await webpush.sendNotification(sub, JSON.stringify(payload));
       sent++;
-      activeSubs.push(sub);
     } catch (err) {
       failed++;
       console.error('[Push Error]', err.statusCode || err.message);
-      if (err.statusCode !== 404 && err.statusCode !== 410) {
-        activeSubs.push(sub);
+      if (err.statusCode === 404 || err.statusCode === 410) {
+        await db.removeSubscription(sub.endpoint);
+        console.log(`[Push Cleanup] Removed dead subscription: ${sub.endpoint}`);
       }
     }
-  }
-
-  if (activeSubs.length !== subscriptions.length) {
-    writeJSON(SUBS_FILE, activeSubs);
-    console.log(`[Push Cleanup] Removed ${subscriptions.length - activeSubs.length} dead subscription(s).`);
   }
 
   return { sent, failed };
@@ -220,10 +120,10 @@ async function checkAndSendReminders() {
   const currentTime = getCurrentTimeString();
   const currentMinutes = getMinutesFromTimeString(currentTime);
   const today = getTodayString();
-  const meds = readJSON(MEDS_FILE, []);
-  const logs = readJSON(LOGS_FILE, []);
-  const settings = readJSON(SETTINGS_FILE, defaultSettings);
-  const escalation = readJSON(ESCALATION_FILE, defaultEscalation);
+  const meds = await db.getMedications();
+  const logs = await db.getLogs();
+  const settings = await db.getSettings();
+  const escalation = await db.getEscalation();
 
   let triggered = 0;
   let vibration = getVibrationPattern(settings.vibration);
@@ -303,15 +203,15 @@ app.get('/admin', (req, res) => {
 });
 
 // Admin API: Get status & girlfriend progress
-app.get('/api/admin/status', (req, res) => {
+app.get('/api/admin/status', async (req, res) => {
   const vnTime = getVNTime();
   const currentTime = getCurrentTimeString();
   const currentMinutes = getMinutesFromTimeString(currentTime);
   const today = getTodayString();
-  const meds = readJSON(MEDS_FILE, []);
-  const logs = readJSON(LOGS_FILE, []);
-  const escalation = readJSON(ESCALATION_FILE, defaultEscalation);
-  const subscriptions = readJSON(SUBS_FILE, []);
+  const meds = await db.getMedications();
+  const logs = await db.getLogs();
+  const escalation = await db.getEscalation();
+  const subscriptions = await db.getSubscriptions();
 
   const todayMeds = meds
     .filter(m => m.active && isMedicationScheduledForToday(m, vnTime))
@@ -361,13 +261,8 @@ app.get('/api/admin/status', (req, res) => {
 });
 
 // Admin API: Update Escalation Config
-app.post('/api/admin/escalation-config', (req, res) => {
-  const current = readJSON(ESCALATION_FILE, defaultEscalation);
-  const updated = {
-    ...current,
-    ...req.body
-  };
-  writeJSON(ESCALATION_FILE, updated);
+app.post('/api/admin/escalation-config', async (req, res) => {
+  const updated = await db.updateEscalation(req.body);
   res.json({ success: true, escalation: updated });
 });
 
@@ -399,46 +294,35 @@ app.get('/api/vapid-key', (req, res) => {
 });
 
 // Settings APIs
-app.get('/api/settings', (req, res) => {
-  const settings = readJSON(SETTINGS_FILE, defaultSettings);
+app.get('/api/settings', async (req, res) => {
+  const settings = await db.getSettings();
   res.json(settings);
 });
 
-app.post('/api/settings', (req, res) => {
-  const current = readJSON(SETTINGS_FILE, defaultSettings);
-  const updated = {
-    ...current,
-    ...req.body
-  };
-  writeJSON(SETTINGS_FILE, updated);
+app.post('/api/settings', async (req, res) => {
+  const updated = await db.updateSettings(req.body);
   res.json({ success: true, settings: updated });
 });
 
 // 2. Register/Subscribe device
-app.post('/api/subscribe', (req, res) => {
+app.post('/api/subscribe', async (req, res) => {
   const subscription = req.body;
   if (!subscription || !subscription.endpoint) {
     return res.status(400).json({ error: 'Invalid subscription object' });
   }
 
-  const subscriptions = readJSON(SUBS_FILE, []);
-  const exists = subscriptions.some(s => s.endpoint === subscription.endpoint);
-  if (!exists) {
-    subscriptions.push({
-      ...subscription,
-      subscribedAt: new Date().toISOString()
-    });
-    writeJSON(SUBS_FILE, subscriptions);
-    console.log('[Subscribe] New device registered. Total devices:', subscriptions.length);
-  }
+  const deviceInfo = req.headers['user-agent'] || '';
+  await db.addSubscription(subscription, deviceInfo);
+  const subscriptions = await db.getSubscriptions();
+  console.log('[Subscribe] Device registered in Neon DB. Total devices:', subscriptions.length);
 
   res.status(201).json({ status: 'subscribed', totalDevices: subscriptions.length });
 });
 
 // 3. List medications + Today status + Hero metric stats
-app.get('/api/medications', (req, res) => {
-  const meds = readJSON(MEDS_FILE, []);
-  const logs = readJSON(LOGS_FILE, []);
+app.get('/api/medications', async (req, res) => {
+  const meds = await db.getMedications();
+  const logs = await db.getLogs();
   const today = getTodayString();
   const currentTime = getCurrentTimeString();
   const vnTime = getVNTime();
@@ -514,13 +398,12 @@ app.get('/api/medications', (req, res) => {
 });
 
 // 4. Create new medication (supports Daily, Weekly, Monthly)
-app.post('/api/medications', (req, res) => {
+app.post('/api/medications', async (req, res) => {
   const { name, dosage, time, frequency, daysOfWeek, dayOfMonth } = req.body;
   if (!name || !time) {
     return res.status(400).json({ error: 'Name and time are required' });
   }
 
-  const meds = readJSON(MEDS_FILE, []);
   const newMed = {
     id: `med-${Date.now()}`,
     name: name.trim(),
@@ -529,59 +412,55 @@ app.post('/api/medications', (req, res) => {
     frequency: ['daily', 'weekly', 'monthly'].includes(frequency) ? frequency : 'daily',
     daysOfWeek: Array.isArray(daysOfWeek) ? daysOfWeek.map(Number) : [],
     dayOfMonth: dayOfMonth ? Number(dayOfMonth) : null,
-    active: true,
-    createdAt: new Date().toISOString()
+    active: true
   };
 
-  meds.push(newMed);
-  writeJSON(MEDS_FILE, meds);
+  await db.addMedication(newMed);
   res.status(201).json(newMed);
 });
 
 // 5. Delete medication
-app.delete('/api/medications/:id', (req, res) => {
+app.delete('/api/medications/:id', async (req, res) => {
   const { id } = req.params;
-  let meds = readJSON(MEDS_FILE, []);
-  const initialLength = meds.length;
-  meds = meds.filter(m => m.id !== id);
-
-  if (meds.length === initialLength) {
-    return res.status(404).json({ error: 'Medication not found' });
-  }
-
-  writeJSON(MEDS_FILE, meds);
-  res.json({ success: true, message: 'Deleted' });
+  const success = await db.deleteMedication(id);
+  res.json({ success, message: 'Deleted' });
 });
 
 // 6. Mark medication as taken
-app.post('/api/medications/:id/take', (req, res) => {
+app.post('/api/medications/:id/take', async (req, res) => {
   const { id } = req.params;
-  const meds = readJSON(MEDS_FILE, []);
+  const meds = await db.getMedications();
   const med = meds.find(m => m.id === id);
   if (!med) {
     return res.status(404).json({ error: 'Medication not found' });
   }
 
   const today = getTodayString();
-  const logs = readJSON(LOGS_FILE, []);
-  const existingIndex = logs.findIndex(l => l.medicationId === id && l.date === today);
-
+  const currentTime = getCurrentTimeString();
   const logEntry = {
     medicationId: id,
     medicationName: med.name,
     date: today,
     status: 'TAKEN',
-    takenAt: new Date().toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' })
+    takenAt: currentTime
   };
 
-  if (existingIndex >= 0) {
-    logs[existingIndex] = logEntry;
-  } else {
-    logs.push(logEntry);
-  }
-
-  writeJSON(LOGS_FILE, logs);
+  await db.addLog(logEntry);
   res.json({ success: true, log: logEntry });
+});
+
+// Neon Realtime sealed query endpoint
+app.get('/api/realtime/sealed-query', async (req, res) => {
+  try {
+    const sealed = await db.sealRealtimeQuery('SELECT id, name, dosage, time, active FROM medications', []);
+    res.json({
+      success: true,
+      url: process.env.NEON_REALTIME_URL,
+      sealed
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // 7. Voice-to-JSON AI Parser using Gemini 3.5 Flash Lite
@@ -668,14 +547,7 @@ app.post('/api/test-push', async (req, res) => {
   if (req.body && req.body.subscription && req.body.subscription.endpoint) {
     try {
       // Also ensure it is saved in database/storage
-      const subscriptions = readJSON(SUBS_FILE, []);
-      if (!subscriptions.some(s => s.endpoint === req.body.subscription.endpoint)) {
-        subscriptions.push({
-          ...req.body.subscription,
-          subscribedAt: new Date().toISOString()
-        });
-        writeJSON(SUBS_FILE, subscriptions);
-      }
+      await db.addSubscription(req.body.subscription, req.headers['user-agent'] || '');
 
       await webpush.sendNotification(req.body.subscription, JSON.stringify(payload));
       return res.json({
@@ -723,9 +595,11 @@ cron.schedule('* * * * *', async () => {
 
 // Start Server if not in Vercel Serverless environment
 if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`Hey Let's Drink running at http://localhost:${PORT}`);
-    console.log(`Server TimeZone: Asia/Ho_Chi_Minh (Current time: ${getCurrentTimeString()})`);
+  db.initDb().then(() => {
+    app.listen(PORT, () => {
+      console.log(`Hey Let's Drink running at http://localhost:${PORT}`);
+      console.log(`Server TimeZone: Asia/Ho_Chi_Minh (Current time: ${getCurrentTimeString()})`);
+    });
   });
 }
 
