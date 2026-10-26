@@ -82,6 +82,19 @@ body {
   padding: 8px 0 16px;
 }
 
+.brand-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-brand-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(30, 15, 72, 0.08));
+}
+
 .brand-title {
   font-size: 19px;
   font-weight: 700;

@@ -13,14 +13,17 @@
   
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="icon" type="image/png" href="/image/logo.png">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div class="app-container">
     <!-- Header -->
     <header class="app-header">
-      <div class="brand-title">Hey Let's Drink</div>
+      <div class="brand-container">
+        <img src="/image/logo.png" alt="Logo" class="app-brand-logo">
+        <div class="brand-title">Hey Let's Drink</div>
+      </div>
       <div id="device-status" class="status-pill">
         <span class="status-dot"></span>
         <span id="status-text">Đang kết nối...</span>
@@ -192,7 +195,7 @@
       </div>
     </main>
 
-    <!-- ================= TAB 4: THIẾT BỊ & THÔNG BÁO ================= -->
+    <!-- ================= TAB 4: THIẾT BỊ & CÀI ĐẶT THÔNG BÁO ================= -->
     <main id="tab-device" class="tab-panel">
       <!-- iOS Guide -->
       <div id="ios-guide" class="ios-guide-box" style="display: none;">
@@ -214,10 +217,58 @@
         <button id="btn-enable-noti" class="permission-btn">Bật thông báo ngay</button>
       </div>
 
+      <!-- Sound & Tone Settings -->
       <div class="device-card">
-        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Kiểm tra kết nối thông báo</div>
+        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">Âm Báo Nhắc Nhở (Sound Preset)</div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+          Chọn giai điệu chuông khi nhận thông báo hoặc nhắc nhở.
+        </p>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select id="setting-sound" class="form-select" style="flex: 1;">
+            <option value="chime">Gentle Chime (Chuông nhẹ nhàng)</option>
+            <option value="bell">Soft Bell (Chuông du dương)</option>
+            <option value="ping">Crisp Ping (Ping dứt khoát)</option>
+            <option value="alert">Digital Alert (Âm báo điện tử)</option>
+          </select>
+          <button id="btn-preview-sound" class="btn-secondary" style="white-space: nowrap; padding: 9px 14px;">
+            Nghe thử ▶
+          </button>
+        </div>
+      </div>
+
+      <!-- Reminder Density Settings -->
+      <div class="device-card">
+        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">Mật Độ Nhắc Nhở (Reminder Density)</div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+          Tần suất gửi lại thông báo nếu bạn gái chưa bấm "Xác nhận đã uống".
+        </p>
+        <div class="form-group" style="margin-bottom: 0;">
+          <select id="setting-density" class="form-select">
+            <option value="single">Tiêu chuẩn (1 lần đúng giờ hẹn)</option>
+            <option value="double" selected>Nhắc nhở kép (Đúng giờ + nhắc lại sau 10 phút)</option>
+            <option value="strict">Nghiêm ngặt (Đúng giờ + sau 5 phút + sau 15 phút)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Vibration Pattern Settings -->
+      <div class="device-card">
+        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">Kiểu Rung Điện Thoại (Vibration)</div>
+        <div class="form-group" style="margin-bottom: 0; margin-top: 8px;">
+          <select id="setting-vibration" class="form-select">
+            <option value="soft">Nhẹ nhàng (Dành cho giờ nghỉ ngơi)</option>
+            <option value="standard" selected>Tiêu chuẩn (2 nhịp rung chuẩn)</option>
+            <option value="urgent">Mạnh mẽ (3 nhịp dồn dập)</option>
+          </select>
+        </div>
+        <button id="btn-save-settings" class="btn-primary" style="margin-top: 14px;">Lưu Cài Đặt Thông Báo</button>
+      </div>
+
+      <!-- Test Notification Card -->
+      <div class="device-card">
+        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Kiểm tra chuông & rung</div>
         <p style="font-size: 13px; color: var(--text-muted);">
-          Gửi thử một thông báo ngay lập tức để kiểm tra điện thoại có rung chuông và hiện banner màn hình khóa không.
+          Bấm nút để thử nghiệm phát âm báo và gửi thông báo màn hình khóa ngay lập tức.
         </p>
         <button id="btn-test-push" class="btn-secondary">Gửi thử thông báo</button>
       </div>
