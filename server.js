@@ -402,11 +402,42 @@ app.get('/api/medications', async (req, res) => {
   });
 });
 
-// 4. Create new medication (supports Daily, Weekly, Monthly)
+// Idempotency & deduplication stores
+const idempotencyStore = new Map();
+const recentCreations = new Map();
+
+// Periodic cleanup of idempotency caches (every 10 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of recentCreations.entries()) {
+    if (now - val.timestamp > 60000) recentCreations.delete(key);
+  }
+  if (idempotencyStore.size > 1000) idempotencyStore.clear();
+}, 10 * 60 * 1000);
+
+// 4. Create new medication (supports Daily, Weekly, Monthly with Idempotency)
 app.post('/api/medications', async (req, res) => {
   const { name, dosage, time, frequency, daysOfWeek, dayOfMonth } = req.body;
   if (!name || !time) {
     return res.status(400).json({ error: 'Name and time are required' });
+  }
+
+  const idempotencyKey = req.headers['x-idempotency-key'] || req.body.idempotencyKey;
+  if (idempotencyKey && idempotencyStore.has(idempotencyKey)) {
+    const cached = idempotencyStore.get(idempotencyKey);
+    console.log(`[Idempotency] Returning cached response for key: ${idempotencyKey}`);
+    return res.status(cached.status).json(cached.body);
+  }
+
+  // Deduplicate rapid double submissions (e.g. exact same med created within 3 seconds)
+  const dedupeKey = `${name.trim().toLowerCase()}_${time.trim()}_${frequency || 'daily'}`;
+  const now = Date.now();
+  if (recentCreations.has(dedupeKey)) {
+    const prev = recentCreations.get(dedupeKey);
+    if (now - prev.timestamp < 3000) {
+      console.log(`[Idempotency] Prevented rapid duplicate creation for: "${name}" at ${time}`);
+      return res.status(200).json(prev.med);
+    }
   }
 
   const newMed = {
@@ -421,6 +452,10 @@ app.post('/api/medications', async (req, res) => {
   };
 
   await db.addMedication(newMed);
+  recentCreations.set(dedupeKey, { timestamp: now, med: newMed });
+  if (idempotencyKey) {
+    idempotencyStore.set(idempotencyKey, { status: 201, body: newMed });
+  }
   res.status(201).json(newMed);
 });
 
@@ -512,11 +547,65 @@ app.get('/api/realtime/sealed-query', async (req, res) => {
   }
 });
 
-// 7. Voice-to-JSON AI Parser using Gemini 3.5 Flash Lite
-app.post('/api/ai/parse-speech', (req, res) => {
+// 7. Voice-to-JSON AI Parser using Gemini with robust multi-model fallback
+async function callGeminiWithFallback(promptText) {
+  if (!GEMINI_API_KEY) {
+    throw new Error('Chưa cấu hình GEMINI_API_KEY trên máy chủ');
+  }
+
+  // Model fallback chain: fastest and most available first
+  const models = ['gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'];
+  let lastError = null;
+
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }],
+          generationConfig: {
+            responseMimeType: 'application/json'
+          }
+        }),
+        signal: AbortSignal.timeout(9000)
+      });
+
+      const bodyText = await resp.text();
+      let responseData;
+      try {
+        responseData = JSON.parse(bodyText);
+      } catch (parseErr) {
+        throw new Error(`Phản hồi AI không hợp lệ (${resp.status}): ${bodyText.slice(0, 100)}`);
+      }
+
+      if (!resp.ok || responseData.error) {
+        const errMsg = responseData.error?.message || `HTTP ${resp.status}`;
+        throw new Error(`[${model}] ${errMsg}`);
+      }
+
+      const candidateText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!candidateText) {
+        throw new Error(`[${model}] Phản hồi rỗng`);
+      }
+
+      const parsed = JSON.parse(candidateText.trim());
+      console.log(`[Gemini] Parsed successfully using model: ${model}`);
+      return parsed;
+    } catch (err) {
+      console.warn(`[Gemini] Model ${model} gặp sự cố: ${err.message}. Đang thử model dự phòng tiếp theo...`);
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error('Không thể kết nối đến tất cả các mô hình Gemini AI.');
+}
+
+app.post('/api/ai/parse-speech', async (req, res) => {
   const { text } = req.body;
   if (!text || !text.trim()) {
-    return res.status(400).json({ error: 'Text transcript is required' });
+    return res.status(400).json({ error: 'Nội dung giọng nói hoặc văn bản không được để trống' });
   }
 
   const promptText = `You are an AI assistant for a medication scheduling app.
@@ -533,53 +622,15 @@ Rules:
 
 Respond ONLY with valid JSON. No conversational text or markdown code fences.`;
 
-  const payload = JSON.stringify({
-    contents: [{
-      parts: [{ text: promptText }]
-    }],
-    generationConfig: {
-      responseMimeType: 'application/json'
-    }
-  });
-
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
-  
-  const aiReq = https.request(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(payload)
-    }
-  }, (aiRes) => {
-    let body = '';
-    aiRes.on('data', chunk => body += chunk);
-    aiRes.on('end', () => {
-      try {
-        const responseData = JSON.parse(body);
-        if (responseData.error) {
-          console.error('[Gemini Error]', responseData.error);
-          return res.status(500).json({ error: responseData.error.message });
-        }
-        const candidateText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!candidateText) {
-          return res.status(500).json({ error: 'No response from AI model' });
-        }
-        const parsed = JSON.parse(candidateText.trim());
-        res.json({ success: true, data: parsed });
-      } catch (err) {
-        console.error('[AI Parse Error]', err.message, body);
-        res.status(500).json({ error: 'Failed to parse AI response' });
-      }
+  try {
+    const data = await callGeminiWithFallback(promptText);
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('[Gemini AI Parse Failed]', err.message);
+    res.status(503).json({ 
+      error: `Gemini AI hiện đang quá tải hoặc gián đoạn (${err.message}). Bạn có thể thử lại sau vài giây hoặc nhập thủ công.` 
     });
-  });
-
-  aiReq.on('error', (err) => {
-    console.error('[Gemini Request Error]', err);
-    res.status(500).json({ error: 'Could not connect to Gemini API' });
-  });
-
-  aiReq.write(payload);
-  aiReq.end();
+  }
 });
 
 // 8. Test push notification immediately

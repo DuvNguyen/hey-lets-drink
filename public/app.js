@@ -179,6 +179,41 @@ async function checkSubscriptionStatus() {
   }
 }
 
+// ----------------------------------------------------
+// In-App Toast Notification
+// ----------------------------------------------------
+function showToast(message, type = 'info', duration = 3500) {
+  let toast = document.getElementById('app-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'app-toast';
+    toast.className = 'toast-notification';
+    document.body.appendChild(toast);
+  }
+
+  const icons = {
+    success: '✓',
+    error: '✕',
+    warning: '⚠',
+    info: 'ℹ'
+  };
+
+  const colors = {
+    success: '#10B981',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    info: '#38BDF8'
+  };
+
+  toast.innerHTML = `<span style="font-weight:700; color:${colors[type] || '#FFF'}; margin-right:4px;">${icons[type] || '•'}</span><span>${message}</span>`;
+  toast.classList.add('show');
+
+  if (window._toastTimer) clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, duration);
+}
+
 function updateStatus(isConnected, text) {
   statusText.textContent = text;
   if (isConnected) {
@@ -190,15 +225,15 @@ function updateStatus(isConnected, text) {
 
 async function subscribeDevice() {
   if (!swRegistration) {
-    alert('Service Worker chưa sẵn sàng. Hãy tải lại trang.');
+    showToast('Service Worker chưa sẵn sàng. Hãy đảm bảo bạn truy cập qua HTTPS hoặc localhost.', 'warning');
     return null;
   }
 
-  // Check iOS Standalone requirement
+  // Check iOS Standalone requirement (Apple strictly requires Add to Home Screen for Web Push)
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
   if (isIOS && !isStandalone) {
-    alert('Trên iPhone (iOS 16.4+), bạn bắt buộc phải bấm nút Chia sẻ ⎋ của Safari -> chọn "Thêm vào Màn hình chính", sau đó mở ứng dụng từ Màn hình chính thì Apple mới cho phép kích hoạt thông báo nhé!');
+    showToast('Trên iPhone Safari, bạn cần bấm nút Chia sẻ ⎋ -> "Thêm vào MH chính" để Apple cho phép nhận thông báo!', 'warning', 5000);
     return null;
   }
 
@@ -208,7 +243,7 @@ async function subscribeDevice() {
   try {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      alert('Bạn đã từ chối quyền thông báo. Vui lòng bật lại trong Cài đặt trình duyệt.');
+      showToast('Bạn đã từ chối quyền thông báo. Vui lòng bật lại trong Cài đặt iPhone > Safari.', 'warning');
       btnEnableNoti.textContent = 'Bật thông báo ngay';
       btnEnableNoti.disabled = false;
       return null;
@@ -230,11 +265,11 @@ async function subscribeDevice() {
 
     updateStatus(true, 'Đã bật thông báo');
     permissionBanner.style.display = 'none';
-    alert('Kích hoạt thông báo thành công trên thiết bị này!');
+    showToast('Kích hoạt thông báo thành công trên thiết bị này!', 'success');
     return subscription;
   } catch (err) {
     console.error('[Subscription Failed]', err);
-    alert('Không thể kích hoạt thông báo: ' + (err.message || 'Lỗi không xác định'));
+    showToast('Không thể kích hoạt thông báo: ' + (err.message || 'Lỗi không xác định'), 'error');
     btnEnableNoti.textContent = 'Bật thông báo ngay';
     btnEnableNoti.disabled = false;
     return null;
@@ -489,26 +524,51 @@ function renderAllMedications(meds) {
   }).join('');
 }
 
+const inFlightActions = new Set();
+
 window.markTaken = async function(id) {
+  if (inFlightActions.has(id)) return;
+  inFlightActions.add(id);
+
   try {
-    const res = await fetch(`/api/medications/${id}/take`, { method: 'POST' });
+    const res = await fetch(`/api/medications/${id}/take`, { 
+      method: 'POST',
+      headers: {
+        'X-Idempotency-Key': `take-${id}-${Date.now()}`
+      }
+    });
     if (res.ok) {
+      showToast('Đã đánh dấu uống thuốc thành công!', 'success');
       await loadMedications();
+    } else {
+      showToast('Không thể cập nhật cữ thuốc. Vui lòng thử lại.', 'error');
     }
   } catch (err) {
     console.error('Error marking dose:', err);
+    showToast('Lỗi kết nối khi đánh dấu cữ thuốc: ' + err.message, 'error');
+  } finally {
+    setTimeout(() => inFlightActions.delete(id), 1200);
   }
 };
 
 window.deleteMed = async function(id) {
+  if (inFlightActions.has(`del-${id}`)) return;
   if (!confirm('Bạn có chắc muốn xóa cữ thuốc này?')) return;
+  inFlightActions.add(`del-${id}`);
+
   try {
     const res = await fetch(`/api/medications/${id}`, { method: 'DELETE' });
     if (res.ok) {
+      showToast('Đã xóa cữ thuốc thành công', 'info');
       await loadMedications();
+    } else {
+      showToast('Không thể xóa cữ thuốc này', 'error');
     }
   } catch (err) {
     console.error('Error deleting dose:', err);
+    showToast('Lỗi khi xóa: ' + err.message, 'error');
+  } finally {
+    inFlightActions.delete(`del-${id}`);
   }
 };
 
@@ -627,14 +687,15 @@ function setupEditModal() {
 
         if (res.ok) {
           closeEditModal();
+          showToast('Đã cập nhật cữ thuốc thành công!', 'success');
           await loadMedications();
         } else {
-          const err = await res.json();
-          alert('Lỗi cập nhật: ' + (err.error || 'Vui lòng kiểm tra lại'));
+          const err = await res.json().catch(() => ({}));
+          showToast('Lỗi cập nhật: ' + (err.error || 'Vui lòng kiểm tra lại'), 'error');
         }
       } catch (err) {
         console.error('Error updating medication:', err);
-        alert('Lỗi kết nối: ' + err.message);
+        showToast('Lỗi kết nối: ' + err.message, 'error');
       } finally {
         btnSubmit.disabled = false;
       }
@@ -682,77 +743,118 @@ function getSelectedDaysOfWeek() {
 // ----------------------------------------------------
 function setupVoiceRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    voiceStatus.textContent = 'Trình duyệt này không hỗ trợ Speech-to-Text. Hãy dùng Google Chrome hoặc Safari.';
-    btnMic.disabled = true;
-    btnMic.style.opacity = '0.5';
-    return;
-  }
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-  recognition = new SpeechRecognition();
-  recognition.lang = 'vi-VN';
-  recognition.continuous = false;
-  recognition.interimResults = true;
-
-  btnMic.addEventListener('click', () => {
-    if (isRecording) {
-      recognition.stop();
-    } else {
-      try {
-        transcriptBox.textContent = 'Đang lắng nghe bạn nói...';
-        transcriptBox.classList.remove('empty');
-        voiceStatus.textContent = 'Đang nghe... Hãy nói tên thuốc, giờ và tần suất.';
-        btnMic.classList.add('recording');
-        isRecording = true;
-        btnAiParse.style.display = 'none';
-        aiPreview.style.display = 'none';
-        recognition.start();
-      } catch (err) {
-        console.error('Speech recognition start error:', err);
-      }
+  // Make transcript box interactive so users can type if mic isn't available or fails
+  transcriptBox.addEventListener('focus', () => {
+    if (transcriptBox.classList.contains('empty')) {
+      transcriptBox.textContent = '';
+      transcriptBox.classList.remove('empty');
     }
   });
 
-  recognition.onresult = (event) => {
-    let interim = '';
-    let final = '';
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      if (event.results[i].isFinal) {
-        final += event.results[i][0].transcript;
-      } else {
-        interim += event.results[i][0].transcript;
-      }
-    }
-    const currentText = (final || interim).trim();
-    if (currentText) {
-      transcriptBox.textContent = currentText;
-      transcriptBox.classList.remove('empty');
-    }
-  };
-
-  recognition.onerror = (event) => {
-    console.error('Speech recognition error:', event.error);
-    voiceStatus.textContent = 'Lỗi thu âm: ' + event.error;
-    btnMic.classList.remove('recording');
-    isRecording = false;
-  };
-
-  recognition.onend = () => {
-    btnMic.classList.remove('recording');
-    isRecording = false;
+  transcriptBox.addEventListener('input', () => {
     const spoken = transcriptBox.textContent.trim();
-    if (spoken && !transcriptBox.classList.contains('empty') && spoken !== 'Đang lắng nghe bạn nói...') {
-      voiceStatus.textContent = 'Đã thu âm xong. Nhấn bên dưới để AI trích xuất.';
+    if (spoken && !transcriptBox.classList.contains('empty') && spoken.length > 2) {
       btnAiParse.style.display = 'block';
+      voiceStatus.textContent = 'Đã có nội dung. Chạm nút bên dưới để AI trích xuất lịch uống.';
     } else {
-      voiceStatus.textContent = 'Chạm vào micro để nói lại.';
+      btnAiParse.style.display = 'none';
+      voiceStatus.textContent = 'Chạm vào micro để nói hoặc gõ nội dung vào ô trên.';
     }
-  };
+  });
+
+  if (!SpeechRecognition) {
+    voiceStatus.textContent = 'Trình duyệt chưa hỗ trợ Speech-to-Text trực tiếp. Bạn có thể gõ nội dung vào ô trên để AI phân tích!';
+    btnMic.disabled = true;
+    btnMic.style.opacity = '0.5';
+  } else {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'vi-VN';
+    recognition.continuous = false;
+    // On iOS Safari, interimResults = true frequently triggers audio aborts
+    recognition.interimResults = !isIOS;
+
+    btnMic.addEventListener('click', () => {
+      if (isRecording) {
+        recognition.stop();
+      } else {
+        try {
+          transcriptBox.textContent = 'Đang lắng nghe bạn nói...';
+          transcriptBox.classList.remove('empty');
+          voiceStatus.textContent = 'Đang nghe... Hãy nói tên thuốc, giờ và tần suất (vd: Canxi 1 viên lúc 8 giờ sáng).';
+          btnMic.classList.add('recording');
+          isRecording = true;
+          btnAiParse.style.display = 'none';
+          aiPreview.style.display = 'none';
+          recognition.start();
+        } catch (err) {
+          console.error('Speech recognition start error:', err);
+          showToast('Không thể bật micro: ' + err.message, 'error');
+          isRecording = false;
+          btnMic.classList.remove('recording');
+        }
+      }
+    });
+
+    recognition.onresult = (event) => {
+      let interim = '';
+      let final = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          final += event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
+        }
+      }
+      const currentText = (final || interim).trim();
+      if (currentText) {
+        transcriptBox.textContent = currentText;
+        transcriptBox.classList.remove('empty');
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      let errMsg = 'Lỗi thu âm: ' + event.error;
+      if (event.error === 'not-allowed') {
+        errMsg = isIOS 
+          ? 'Chưa cấp quyền Micro hoặc chưa bật "Đọc chính tả" trong Cài đặt iPhone > Bàn phím.' 
+          : 'Quyền micro bị từ chối. Vui lòng cho phép quyền truy cập Micro trên trình duyệt.';
+      } else if (event.error === 'service-not-allowed') {
+        errMsg = 'Dịch vụ giọng nói Apple bị tắt. Hãy vào Cài đặt iPhone > Cài đặt chung > Bàn phím > Bật "Bật Đọc chính tả".';
+      } else if (event.error === 'no-speech') {
+        errMsg = 'Chưa nhận diện được giọng nói. Bạn có thể chạm mic nói lại hoặc gõ trực tiếp vào ô.';
+      } else if (event.error === 'audio-capture') {
+        errMsg = 'Không tìm thấy thiết bị thu âm khả dụng.';
+      }
+
+      voiceStatus.textContent = errMsg;
+      showToast(errMsg, 'error', 4500);
+      btnMic.classList.remove('recording');
+      isRecording = false;
+    };
+
+    recognition.onend = () => {
+      btnMic.classList.remove('recording');
+      isRecording = false;
+      const spoken = transcriptBox.textContent.trim();
+      if (spoken && !transcriptBox.classList.contains('empty') && spoken !== 'Đang lắng nghe bạn nói...') {
+        voiceStatus.textContent = 'Đã thu âm xong. Nhấn nút bên dưới để Gemini AI trích xuất.';
+        btnAiParse.style.display = 'block';
+      } else {
+        voiceStatus.textContent = 'Chạm vào micro để nói lại hoặc gõ vào ô trên.';
+      }
+    };
+  }
 
   // Trigger Gemini AI parsing
   btnAiParse.addEventListener('click', async () => {
     const text = transcriptBox.textContent.trim();
-    if (!text) return;
+    if (!text || text === 'Nội dung thu âm sẽ xuất hiện ở đây (hoặc chạm vào đây để gõ)...' || transcriptBox.classList.contains('empty')) {
+      showToast('Vui lòng nói hoặc nhập nội dung cữ thuốc trước khi phân tích.', 'warning');
+      return;
+    }
 
     btnAiParse.textContent = 'Gemini AI đang phân tích...';
     btnAiParse.disabled = true;
@@ -765,7 +867,7 @@ function setupVoiceRecognition() {
       });
       const result = await res.json();
 
-      if (result.success && result.data) {
+      if (res.ok && result.success && result.data) {
         currentAiData = result.data;
         aiName.textContent = currentAiData.name || '-';
         aiDosage.textContent = currentAiData.dosage || '-';
@@ -782,42 +884,56 @@ function setupVoiceRecognition() {
 
         aiPreview.style.display = 'block';
         btnAiParse.style.display = 'none';
+        showToast('Gemini AI đã phân tích thông tin thuốc thành công!', 'success');
       } else {
-        alert('AI không thể trích xuất thông tin: ' + (result.error || 'Thử nói rõ hơn'));
+        const errorMsg = result.error || 'AI không thể trích xuất thông tin. Hãy nói hoặc gõ rõ tên thuốc và giờ.';
+        voiceStatus.textContent = 'Lỗi AI: ' + errorMsg;
+        showToast(errorMsg, 'error', 4500);
       }
     } catch (err) {
       console.error('AI Parse error:', err);
-      alert('Lỗi kết nối AI: ' + err.message);
+      showToast('Lỗi kết nối Gemini AI: ' + err.message, 'error');
     } finally {
       btnAiParse.textContent = 'Gemini AI Phân Tích & Điền Lịch';
       btnAiParse.disabled = false;
     }
   });
 
-  // Save AI extracted medication
+  // Save AI extracted medication (with double-click prevention & idempotency)
   btnSaveAi.addEventListener('click', async () => {
     if (!currentAiData) return;
+    if (btnSaveAi.disabled) return;
+
     btnSaveAi.textContent = 'Đang lưu...';
     btnSaveAi.disabled = true;
+
+    const idempotencyKey = 'ai-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
 
     try {
       const res = await fetch('/api/medications', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': idempotencyKey
+        },
         body: JSON.stringify(currentAiData)
       });
 
       if (res.ok) {
-        alert('Đã lưu cữ thuốc thành công!');
+        showToast('Đã lưu cữ thuốc từ AI thành công!', 'success');
         aiPreview.style.display = 'none';
-        transcriptBox.textContent = 'Nội dung thu âm sẽ xuất hiện ở đây...';
+        transcriptBox.textContent = 'Nội dung thu âm sẽ xuất hiện ở đây (hoặc chạm vào đây để gõ)...';
         transcriptBox.classList.add('empty');
         currentAiData = null;
         await loadMedications();
         switchToTab('tab-today');
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        showToast('Không thể lưu cữ thuốc: ' + (errData.error || 'Vui lòng thử lại'), 'error');
       }
     } catch (err) {
       console.error('Error saving AI med:', err);
+      showToast('Lỗi khi lưu cữ thuốc: ' + err.message, 'error');
     } finally {
       btnSaveAi.textContent = 'Lưu Cữ Thuốc Này';
       btnSaveAi.disabled = false;
@@ -840,9 +956,12 @@ function setupEventHandlers() {
     }
   });
 
-  // Manual Add Form
+  // Manual Add Form (with Idempotency & double-click locking)
   addMedForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btnSubmit = document.getElementById('btn-submit-med') || addMedForm.querySelector('button[type="submit"]');
+    if (btnSubmit && btnSubmit.disabled) return;
+
     const nameInput = document.getElementById('med-name');
     const dosageInput = document.getElementById('med-dosage');
     const timeInput = document.getElementById('med-time');
@@ -855,12 +974,25 @@ function setupEventHandlers() {
     const daysOfWeek = freqVal === 'weekly' ? getSelectedDaysOfWeek() : [];
     const dayOfMonth = freqVal === 'monthly' ? Number(monthDayInput.value) : null;
 
-    if (!name || !time) return;
+    if (!name || !time) {
+      showToast('Vui lòng nhập tên thuốc và giờ nhắc', 'warning');
+      return;
+    }
+
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = 'Đang lưu cữ thuốc...';
+    }
+
+    const idempotencyKey = 'manual-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
 
     try {
       const res = await fetch('/api/medications', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': idempotencyKey
+        },
         body: JSON.stringify({
           name,
           dosage,
@@ -872,6 +1004,7 @@ function setupEventHandlers() {
       });
 
       if (res.ok) {
+        showToast('Đã lưu cữ thuốc thành công!', 'success');
         nameInput.value = '';
         dosageInput.value = '';
         timeInput.value = '';
@@ -879,9 +1012,18 @@ function setupEventHandlers() {
         monthDayInput.value = '';
         await loadMedications();
         switchToTab('tab-today');
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        showToast('Không thể lưu cữ thuốc: ' + (errData.error || 'Vui lòng thử lại'), 'error');
       }
     } catch (err) {
       console.error('Error creating medication:', err);
+      showToast('Lỗi kết nối khi lưu: ' + err.message, 'error');
+    } finally {
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Lưu Cữ Thuốc';
+      }
     }
   });
 
@@ -892,7 +1034,7 @@ function setupEventHandlers() {
 
     try {
       if (!swRegistration) {
-        alert('Service Worker chưa sẵn sàng. Hãy tải lại trang.');
+        showToast('Service Worker chưa sẵn sàng. Hãy đảm bảo chạy trên HTTPS hoặc localhost.', 'warning');
         btnTestPush.textContent = 'Gửi thử thông báo';
         btnTestPush.disabled = false;
         return;
@@ -927,13 +1069,13 @@ function setupEventHandlers() {
       }, 2500);
 
       if (data.details && data.details.sent > 0) {
-        alert('Đã gửi thông báo thành công! Hãy khóa màn hình hoặc kiểm tra thanh thông báo điện thoại.');
+        showToast('Đã gửi thông báo thành công! Hãy khóa màn hình hoặc kiểm tra thông báo.', 'success', 5000);
       } else {
-        alert('Không gửi được: ' + (data.error || 'Vui lòng kiểm tra lại quyền thông báo'));
+        showToast('Không gửi được: ' + (data.error || 'Kiểm tra quyền thông báo trên thiết bị'), 'error');
       }
     } catch (err) {
       console.error('Test push error:', err);
-      alert('Lỗi gửi thông báo: ' + err.message);
+      showToast('Lỗi gửi thông báo: ' + err.message, 'error');
       btnTestPush.textContent = 'Gửi thử thông báo';
       btnTestPush.disabled = false;
     }

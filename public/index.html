@@ -189,7 +189,7 @@
             </select>
           </div>
 
-          <button type="submit" class="btn-primary" style="margin-top: 8px;">Lưu Cữ Thuốc</button>
+          <button id="btn-submit-med" type="submit" class="btn-primary" style="margin-top: 8px;">Lưu Cữ Thuốc</button>
         </form>
       </div>
 
@@ -220,11 +220,15 @@
             </svg>
           </button>
         </div>
-        <div id="voice-status" class="voice-status-text">Chạm vào micro để nói</div>
+        <div id="voice-status" class="voice-status-text">Chạm vào micro để nói hoặc chạm ô bên dưới để gõ</div>
 
-        <!-- Live transcript -->
-        <div id="transcript-box" class="transcript-box empty">
-          Nội dung thu âm sẽ xuất hiện ở đây...
+        <!-- Live transcript (editable so users on iPhone or without mic can still type) -->
+        <div id="transcript-box" class="transcript-box empty" contenteditable="true" spellcheck="false" title="Chạm vào đây để gõ nội dung nếu không dùng mic">
+          Nội dung thu âm sẽ xuất hiện ở đây (hoặc chạm vào đây để gõ)...
+        </div>
+
+        <div style="font-size: 11.5px; color: var(--text-muted); text-align: center; margin-bottom: 12px; line-height: 1.4;">
+          💡 <em>iPhone (Safari):</em> Cần bật <strong>Cài đặt &gt; Cài đặt chung &gt; Bàn phím &gt; Bật Đọc chính tả</strong> và chạy trên HTTPS. Nếu mic không phản hồi, bạn có thể gõ trực tiếp vào ô trên.
         </div>
 
         <button id="btn-ai-parse" class="btn-primary" style="display: none; margin-bottom: 12px;">
@@ -459,6 +463,9 @@
       </button>
     </div>
   </div>
+
+  <!-- Floating Toast Notification for Mobile / PWA -->
+  <div id="app-toast" class="toast-notification"></div>
 
   <script src="/neon-realtime.js"></script>
   <script src="/app.js"></script>
