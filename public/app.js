@@ -26,7 +26,7 @@ const addMedForm = document.getElementById('add-med-form');
 const medFreqSelect = document.getElementById('med-freq');
 const weeklyPicker = document.getElementById('weekly-picker');
 const monthlyPicker = document.getElementById('monthly-picker');
-const dayChips = document.querySelectorAll('.day-chip');
+const addDayChips = document.querySelectorAll('#weekly-picker .day-chip');
 
 // Voice Elements
 const btnMic = document.getElementById('btn-mic');
@@ -524,7 +524,7 @@ function setupRecurrencePicker() {
     }
   });
 
-  dayChips.forEach(chip => {
+  addDayChips.forEach(chip => {
     chip.addEventListener('click', () => {
       chip.classList.toggle('selected');
     });
@@ -533,7 +533,7 @@ function setupRecurrencePicker() {
 
 function getSelectedDaysOfWeek() {
   const selected = [];
-  dayChips.forEach(chip => {
+  addDayChips.forEach(chip => {
     if (chip.classList.contains('selected')) {
       selected.push(Number(chip.getAttribute('data-day')));
     }
@@ -739,7 +739,7 @@ function setupEventHandlers() {
         nameInput.value = '';
         dosageInput.value = '';
         timeInput.value = '';
-        dayChips.forEach(c => c.classList.remove('selected'));
+        addDayChips.forEach(c => c.classList.remove('selected'));
         monthDayInput.value = '';
         await loadMedications();
         switchToTab('tab-today');

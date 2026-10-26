@@ -128,23 +128,57 @@
           </div>
 
           <!-- Weekly Day Picker (T2 -> CN) -->
-          <div id="weekly-picker" class="form-group" style="display: none;">
-            <label class="form-label">Chọn các ngày trong tuần</label>
+          <div id="weekly-picker" class="recurrence-subpanel" style="display: none;">
+            <label class="form-label">Chọn các ngày uống trong tuần:</label>
             <div class="day-selector">
-              <div class="day-chip" data-day="1">T2</div>
-              <div class="day-chip" data-day="2">T3</div>
-              <div class="day-chip" data-day="3">T4</div>
-              <div class="day-chip" data-day="4">T5</div>
-              <div class="day-chip" data-day="5">T6</div>
-              <div class="day-chip" data-day="6">T7</div>
-              <div class="day-chip" data-day="7">CN</div>
+              <button type="button" class="day-chip add-day-chip" data-day="1">T2</button>
+              <button type="button" class="day-chip add-day-chip" data-day="2">T3</button>
+              <button type="button" class="day-chip add-day-chip" data-day="3">T4</button>
+              <button type="button" class="day-chip add-day-chip" data-day="4">T5</button>
+              <button type="button" class="day-chip add-day-chip" data-day="5">T6</button>
+              <button type="button" class="day-chip add-day-chip" data-day="6">T7</button>
+              <button type="button" class="day-chip add-day-chip" data-day="7">CN</button>
             </div>
+            <div class="day-chip-hint">Chạm vào thứ để bật/tắt ngày nhắc lại</div>
           </div>
 
           <!-- Monthly Day Picker -->
-          <div id="monthly-picker" class="form-group" style="display: none;">
-            <label class="form-label" for="med-month-day">Ngày trong tháng (1 - 31)</label>
-            <input type="number" id="med-month-day" class="form-input" min="1" max="31" placeholder="Ví dụ: 15">
+          <div id="monthly-picker" class="recurrence-subpanel" style="display: none;">
+            <label class="form-label" for="med-month-day">Chọn ngày uống hàng tháng:</label>
+            <select id="med-month-day" class="form-select">
+              <option value="">-- Chọn ngày trong tháng --</option>
+              <option value="1">Ngày 1 hàng tháng</option>
+              <option value="2">Ngày 2 hàng tháng</option>
+              <option value="3">Ngày 3 hàng tháng</option>
+              <option value="4">Ngày 4 hàng tháng</option>
+              <option value="5">Ngày 5 hàng tháng</option>
+              <option value="6">Ngày 6 hàng tháng</option>
+              <option value="7">Ngày 7 hàng tháng</option>
+              <option value="8">Ngày 8 hàng tháng</option>
+              <option value="9">Ngày 9 hàng tháng</option>
+              <option value="10">Ngày 10 hàng tháng</option>
+              <option value="11">Ngày 11 hàng tháng</option>
+              <option value="12">Ngày 12 hàng tháng</option>
+              <option value="13">Ngày 13 hàng tháng</option>
+              <option value="14">Ngày 14 hàng tháng</option>
+              <option value="15">Ngày 15 hàng tháng</option>
+              <option value="16">Ngày 16 hàng tháng</option>
+              <option value="17">Ngày 17 hàng tháng</option>
+              <option value="18">Ngày 18 hàng tháng</option>
+              <option value="19">Ngày 19 hàng tháng</option>
+              <option value="20">Ngày 20 hàng tháng</option>
+              <option value="21">Ngày 21 hàng tháng</option>
+              <option value="22">Ngày 22 hàng tháng</option>
+              <option value="23">Ngày 23 hàng tháng</option>
+              <option value="24">Ngày 24 hàng tháng</option>
+              <option value="25">Ngày 25 hàng tháng</option>
+              <option value="26">Ngày 26 hàng tháng</option>
+              <option value="27">Ngày 27 hàng tháng</option>
+              <option value="28">Ngày 28 hàng tháng</option>
+              <option value="29">Ngày 29 hàng tháng</option>
+              <option value="30">Ngày 30 hàng tháng</option>
+              <option value="31">Ngày 31 hàng tháng</option>
+            </select>
           </div>
 
           <button type="submit" class="btn-primary" style="margin-top: 8px;">Lưu Cữ Thuốc</button>
@@ -317,7 +351,7 @@
 
         <!-- Weekly Recurrence Picker -->
         <div id="edit-weekly-picker" class="recurrence-subpanel" style="display: none;">
-          <label class="form-label">Chọn các ngày uống:</label>
+          <label class="form-label">Chọn các ngày uống trong tuần:</label>
           <div class="day-chip-group">
             <button type="button" class="day-chip edit-day-chip" data-day="1">T2</button>
             <button type="button" class="day-chip edit-day-chip" data-day="2">T3</button>
@@ -327,12 +361,46 @@
             <button type="button" class="day-chip edit-day-chip" data-day="6">T7</button>
             <button type="button" class="day-chip edit-day-chip" data-day="7">CN</button>
           </div>
+          <div class="day-chip-hint">Chạm vào thứ để bật/tắt ngày nhắc lại</div>
         </div>
 
         <!-- Monthly Recurrence Picker -->
         <div id="edit-monthly-picker" class="recurrence-subpanel" style="display: none;">
-          <label class="form-label" for="edit-med-month-day">Ngày trong tháng (1 - 31):</label>
-          <input type="number" id="edit-med-month-day" class="form-input" min="1" max="31" placeholder="Ví dụ: 15">
+          <label class="form-label" for="edit-med-month-day">Chọn ngày uống hàng tháng:</label>
+          <select id="edit-med-month-day" class="form-select">
+            <option value="">-- Chọn ngày trong tháng --</option>
+            <option value="1">Ngày 1 hàng tháng</option>
+            <option value="2">Ngày 2 hàng tháng</option>
+            <option value="3">Ngày 3 hàng tháng</option>
+            <option value="4">Ngày 4 hàng tháng</option>
+            <option value="5">Ngày 5 hàng tháng</option>
+            <option value="6">Ngày 6 hàng tháng</option>
+            <option value="7">Ngày 7 hàng tháng</option>
+            <option value="8">Ngày 8 hàng tháng</option>
+            <option value="9">Ngày 9 hàng tháng</option>
+            <option value="10">Ngày 10 hàng tháng</option>
+            <option value="11">Ngày 11 hàng tháng</option>
+            <option value="12">Ngày 12 hàng tháng</option>
+            <option value="13">Ngày 13 hàng tháng</option>
+            <option value="14">Ngày 14 hàng tháng</option>
+            <option value="15">Ngày 15 hàng tháng</option>
+            <option value="16">Ngày 16 hàng tháng</option>
+            <option value="17">Ngày 17 hàng tháng</option>
+            <option value="18">Ngày 18 hàng tháng</option>
+            <option value="19">Ngày 19 hàng tháng</option>
+            <option value="20">Ngày 20 hàng tháng</option>
+            <option value="21">Ngày 21 hàng tháng</option>
+            <option value="22">Ngày 22 hàng tháng</option>
+            <option value="23">Ngày 23 hàng tháng</option>
+            <option value="24">Ngày 24 hàng tháng</option>
+            <option value="25">Ngày 25 hàng tháng</option>
+            <option value="26">Ngày 26 hàng tháng</option>
+            <option value="27">Ngày 27 hàng tháng</option>
+            <option value="28">Ngày 28 hàng tháng</option>
+            <option value="29">Ngày 29 hàng tháng</option>
+            <option value="30">Ngày 30 hàng tháng</option>
+            <option value="31">Ngày 31 hàng tháng</option>
+          </select>
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 16px;">
