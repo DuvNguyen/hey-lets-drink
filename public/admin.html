@@ -124,48 +124,6 @@
       margin-bottom: 14px;
       box-shadow: var(--shadow-xs);
     }
-    .device-card-this {
-      background: #F0F7FF;
-      border: 1.5px solid #BFDBFE;
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
-      margin-bottom: 12px;
-    }
-    .device-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 12px;
-      background: var(--surface-subtle);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-xs);
-      margin-bottom: 8px;
-      transition: all var(--dur-fast) var(--ease-standard);
-    }
-    .device-row.current-device {
-      border-color: #93C5FD;
-      background: #F8FAFC;
-    }
-    .btn-icon-danger {
-      background: transparent;
-      border: none;
-      color: #94A3B8;
-      cursor: pointer;
-      padding: 6px;
-      border-radius: var(--radius-xs);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: all var(--dur-fast) var(--ease-standard);
-      -webkit-tap-highlight-color: transparent;
-    }
-    .btn-icon-danger:hover {
-      color: #EF4444;
-      background: #FEE2E2;
-    }
-    .btn-icon-danger:active {
-      transform: scale(0.92);
-    }
   </style>
 </head>
 <body>
@@ -206,57 +164,6 @@
         <span>Làm mới</span>
       </button>
     </div>
-
-    <!-- Section 0: Device & Notification Management -->
-    <section class="device-card" id="section-devices">
-      <div class="section-header" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <span class="section-title">Quản Lý Thiết Bị & Nhận Thông Báo</span>
-          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-            Bật hoặc tắt nhận thông báo riêng cho từng thiết bị
-          </div>
-        </div>
-        <button id="btn-cleanup-devices" class="btn-secondary" style="padding: 4px 8px; font-size: 11px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-          <span>Dọn thiết bị trùng</span>
-        </button>
-      </div>
-
-      <!-- Box: Thiết bị này (Bạn đang cầm) -->
-      <div id="this-device-box" class="device-card-this" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="flex: 1; padding-right: 12px;">
-            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
-              <span style="font-size: 13px; font-weight: 700; color: var(--sd-indigo);">📱 Thiết bị này (Bạn đang dùng)</span>
-              <span id="this-device-badge" class="status-badge ok" style="font-size: 10px;">Đang nhận</span>
-            </div>
-            <div style="font-size: 12px; color: var(--text-body);" id="this-device-desc">
-              Tắt nhận thông báo trên máy này để không bị nhắc cữ thuốc. Máy bạn gái vẫn nhận bình thường.
-            </div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="this-device-toggle" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Prompt when this device is not subscribed -->
-      <div id="this-device-unregistered" style="display: none; padding: 10px 12px; background: var(--surface-subtle); border-radius: var(--radius-xs); border: 1px dashed var(--border-strong); margin-bottom: 12px; font-size: 12px; color: var(--text-muted);">
-        ℹ️ Trình duyệt này chưa đăng ký nhận thông báo (Không bị làm phiền bởi thông báo cữ thuốc).
-      </div>
-
-      <!-- List of all registered devices -->
-      <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;">
-        Tất cả thiết bị đã kết nối (<span id="devices-count-label">0</span>)
-      </div>
-      <div id="admin-device-list" style="display: flex; flex-direction: column; gap: 6px;">
-        <div style="padding: 12px; text-align: center; color: var(--text-muted); font-size: 12px;">Đang tải danh sách thiết bị...</div>
-      </div>
-    </section>
 
     <!-- Section 1: Live Girlfriend Today Status -->
     <section class="device-card">
@@ -406,243 +313,11 @@
     const quickPills = document.querySelectorAll('.quick-pill');
     const toast = document.getElementById('toast');
 
-    // Device Management Elements
-    let currentEndpoint = null;
-    let registeredDevices = [];
-    const thisDeviceBox = document.getElementById('this-device-box');
-    const thisDeviceUnreg = document.getElementById('this-device-unregistered');
-    const thisDeviceToggle = document.getElementById('this-device-toggle');
-    const thisDeviceBadge = document.getElementById('this-device-badge');
-    const devicesCountLabel = document.getElementById('devices-count-label');
-    const adminDeviceList = document.getElementById('admin-device-list');
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      await detectCurrentDevice();
+    document.addEventListener('DOMContentLoaded', () => {
       loadAdminStatus();
-      loadDevices();
       setupHandlers();
       initAdminRealtime();
     });
-
-    async function detectCurrentDevice() {
-      if ('serviceWorker' in navigator) {
-        try {
-          await navigator.serviceWorker.register('/sw.js');
-          const reg = await navigator.serviceWorker.ready;
-          const sub = await reg.pushManager.getSubscription();
-          if (sub && sub.endpoint) {
-            currentEndpoint = sub.endpoint;
-            console.log('[Admin] Detected current device endpoint:', currentEndpoint.slice(0, 30) + '...');
-          }
-        } catch (e) {
-          console.warn('[Admin] Could not detect push subscription on this device:', e);
-        }
-      }
-    }
-
-    function parseDeviceInfo(ua) {
-      if (!ua) return 'Thiết bị không xác định';
-      const isIOS = /iPad|iPhone|iPod/.test(ua);
-      const isAndroid = /Android/.test(ua);
-      const isMac = /Macintosh/.test(ua);
-      const isWindows = /Windows/.test(ua);
-
-      let os = 'Khác';
-      if (isIOS) os = 'iPhone / iOS';
-      else if (isAndroid) os = 'Android';
-      else if (isMac) os = 'macOS';
-      else if (isWindows) os = 'Windows';
-
-      let browser = '';
-      if (/CriOS|Chrome/.test(ua) && !/Edg/.test(ua)) browser = 'Chrome';
-      else if (/Safari/.test(ua) && !/Chrome|CriOS/.test(ua)) browser = 'Safari';
-      else if (/Firefox/.test(ua)) browser = 'Firefox';
-
-      return browser ? `${os} (${browser})` : os;
-    }
-
-    function formatSubDate(isoStr) {
-      if (!isoStr) return '';
-      try {
-        const d = new Date(isoStr);
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const hours = String(d.getHours()).padStart(2, '0');
-        const mins = String(d.getMinutes()).padStart(2, '0');
-        return `${hours}:${mins} - ${day}/${month}`;
-      } catch {
-        return '';
-      }
-    }
-
-    async function loadDevices() {
-      try {
-        const res = await fetch('/api/admin/devices');
-        const data = await res.json();
-        registeredDevices = data.devices || [];
-
-        if (devicesCountLabel) {
-          devicesCountLabel.textContent = registeredDevices.length;
-        }
-
-        // Check if current device is in the list
-        const matchingThis = currentEndpoint 
-          ? registeredDevices.find(d => d.endpoint === currentEndpoint)
-          : null;
-
-        if (matchingThis) {
-          if (thisDeviceBox) thisDeviceBox.style.display = 'block';
-          if (thisDeviceUnreg) thisDeviceUnreg.style.display = 'none';
-          if (thisDeviceToggle) thisDeviceToggle.checked = matchingThis.enabled !== false;
-          if (thisDeviceBadge) {
-            if (matchingThis.enabled !== false) {
-              thisDeviceBadge.className = 'status-badge ok';
-              thisDeviceBadge.textContent = 'Đang nhận';
-            } else {
-              thisDeviceBadge.className = 'status-badge overdue';
-              thisDeviceBadge.textContent = 'Đã tắt nhận';
-            }
-          }
-        } else {
-          if (thisDeviceBox) thisDeviceBox.style.display = 'none';
-          if (thisDeviceUnreg) thisDeviceUnreg.style.display = 'block';
-        }
-
-        renderDeviceList(registeredDevices);
-      } catch (err) {
-        console.error('Error loading devices:', err);
-      }
-    }
-
-    function getDeviceMeta(d, isThis) {
-      const ua = d.deviceInfo || '';
-      const isBoyfriend = ua.includes('18_2');
-      const isGirlfriend = ua.includes('18_7');
-
-      if (isThis) {
-        return {
-          title: 'iPhone của bạn (Thiết bị này)',
-          badge: '<span class="admin-badge" style="background:#E0E7FF;color:#3730A3;font-size:10px;">Thiết bị này</span>'
-        };
-      }
-      if (isBoyfriend) {
-        return {
-          title: 'iPhone của bạn (iOS 18.2)',
-          badge: '<span class="admin-badge" style="background:#E0E7FF;color:#3730A3;font-size:10px;">Máy bạn trai</span>'
-        };
-      }
-      if (isGirlfriend) {
-        return {
-          title: 'iPhone 15 (iOS 18.7)',
-          badge: '<span class="admin-badge" style="background:#FEF3C7;color:#92400E;font-size:10px;">Máy bạn gái</span>'
-        };
-      }
-      return {
-        title: parseDeviceInfo(ua),
-        badge: '<span class="admin-badge" style="background:#F1F5F9;color:#475569;font-size:10px;">Thiết bị khác</span>'
-      };
-    }
-
-    function renderDeviceList(devices) {
-      if (!adminDeviceList) return;
-
-      if (!devices || !devices.length) {
-        adminDeviceList.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted); font-size: 12px;">Chưa có thiết bị nào đăng ký nhận thông báo.</div>';
-        return;
-      }
-
-      adminDeviceList.innerHTML = devices.map(d => {
-        const isThis = currentEndpoint && d.endpoint === currentEndpoint;
-        const meta = getDeviceMeta(d, isThis);
-        const dateStr = formatSubDate(d.subscribedAt);
-        const isEnabled = d.enabled !== false;
-
-        return `
-          <div class="device-row ${isThis ? 'current-device' : ''}">
-            <div style="flex: 1; min-width: 0; padding-right: 8px;">
-              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px;">
-                <strong style="font-size: 13px; color: var(--text-heading);">${meta.title}</strong>
-                ${meta.badge}
-                <span class="status-badge ${isEnabled ? 'ok' : 'overdue'}" style="font-size: 10px;">
-                  ${isEnabled ? 'Nhận noti' : 'Tắt noti'}
-                </span>
-              </div>
-              <div style="font-size: 11px; color: var(--text-muted);">
-                ${dateStr ? `Đăng ký: ${dateStr}` : 'Đã kết nối'}
-              </div>
-            </div>
-
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <label class="toggle-switch">
-                <input type="checkbox" class="device-toggle-btn" data-endpoint="${encodeURIComponent(d.endpoint)}" ${isEnabled ? 'checked' : ''}>
-                <span class="toggle-slider"></span>
-              </label>
-              <button class="btn-icon-danger btn-delete-device" data-endpoint="${encodeURIComponent(d.endpoint)}" title="Xóa thiết bị này">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      // Bind events to toggle switches
-      adminDeviceList.querySelectorAll('.device-toggle-btn').forEach(btn => {
-        btn.addEventListener('change', async (e) => {
-          const endpoint = decodeURIComponent(e.target.dataset.endpoint);
-          const enabled = e.target.checked;
-          await toggleDeviceStatus(endpoint, enabled);
-        });
-      });
-
-      // Bind events to delete buttons
-      adminDeviceList.querySelectorAll('.btn-delete-device').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const targetBtn = e.target.closest('.btn-delete-device');
-          const endpoint = decodeURIComponent(targetBtn.dataset.endpoint);
-          if (confirm('Bạn có chắc muốn gỡ bỏ thiết bị này khỏi hệ thống?')) {
-            await deleteDevice(endpoint);
-          }
-        });
-      });
-    }
-
-    async function toggleDeviceStatus(endpoint, enabled) {
-      try {
-        const res = await fetch('/api/admin/devices/toggle', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint, enabled })
-        });
-        if (res.ok) {
-          const isThis = currentEndpoint && endpoint === currentEndpoint;
-          showToast(enabled ? `Đã bật thông báo cho ${isThis ? 'máy này' : 'thiết bị'}` : `Đã tắt thông báo cho ${isThis ? 'máy này' : 'thiết bị'}`);
-          loadDevices();
-          loadAdminStatus();
-        }
-      } catch (err) {
-        showToast('Lỗi cập nhật thiết bị: ' + err.message);
-      }
-    }
-
-    async function deleteDevice(endpoint) {
-      try {
-        const res = await fetch('/api/admin/devices', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint })
-        });
-        if (res.ok) {
-          showToast('Đã gỡ bỏ thiết bị');
-          loadDevices();
-          loadAdminStatus();
-        }
-      } catch (err) {
-        showToast('Lỗi: ' + err.message);
-      }
-    }
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -663,10 +338,9 @@
 
         // Connection Strip
         const count = data.totalDevices || 0;
-        const active = data.activeDevices !== undefined ? data.activeDevices : count;
         if (count > 0) {
-          connDot.style.backgroundColor = active > 0 ? '#10B981' : '#F59E0B';
-          connText.textContent = `Đã kết nối ${count} thiết bị (${active} đang bật nhận noti)`;
+          connDot.style.backgroundColor = '#10B981';
+          connText.textContent = `Đã kết nối ${count} thiết bị bạn gái`;
         } else {
           connDot.style.backgroundColor = '#F59E0B';
           connText.textContent = 'Chưa có thiết bị kết nối (bạn gái cần bật thông báo)';
@@ -716,37 +390,8 @@
     function setupHandlers() {
       btnRefresh.addEventListener('click', () => {
         loadAdminStatus();
-        loadDevices();
         showToast('Đã làm mới dữ liệu!');
       });
-
-      if (thisDeviceToggle) {
-        thisDeviceToggle.addEventListener('change', async (e) => {
-          if (!currentEndpoint) return;
-          await toggleDeviceStatus(currentEndpoint, e.target.checked);
-        });
-      }
-
-      // Cleanup duplicate devices
-      const btnCleanup = document.getElementById('btn-cleanup-devices');
-      if (btnCleanup) {
-        btnCleanup.addEventListener('click', async () => {
-          btnCleanup.disabled = true;
-          try {
-            const res = await fetch('/api/admin/devices/cleanup', { method: 'POST' });
-            const data = await res.json();
-            if (data.success) {
-              showToast(`Đã dọn dẹp ${data.removedCount} thiết bị trùng lặp`);
-              loadDevices();
-              loadAdminStatus();
-            }
-          } catch (err) {
-            showToast('Lỗi dọn dẹp: ' + err.message);
-          } finally {
-            btnCleanup.disabled = false;
-          }
-        });
-      }
 
       // Save Anki config
       btnSaveAnki.addEventListener('click', async () => {

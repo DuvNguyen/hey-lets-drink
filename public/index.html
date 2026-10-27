@@ -275,6 +275,24 @@
         <button id="btn-enable-noti" class="permission-btn">Bật thông báo ngay</button>
       </div>
 
+      <!-- Device Notification Toggle (Scope: This device only) -->
+      <div class="device-card" id="card-device-noti">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="flex: 1; padding-right: 14px;">
+            <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">
+              Thông báo trên thiết bị này
+            </div>
+            <p id="device-noti-desc" style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
+              Nhận thông báo và chuông nhắc khi đến cữ uống thuốc.
+            </p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-device-noti" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
       <!-- Reminder Density Settings -->
       <div class="device-card">
         <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">Mật Độ Nhắc Nhở (Reminder Density)</div>

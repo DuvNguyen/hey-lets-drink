@@ -403,6 +403,27 @@ app.post('/api/subscribe', async (req, res) => {
   res.status(201).json({ status: 'subscribed', totalDevices: subscriptions.length });
 });
 
+// 2.5. Check current device subscription status
+app.get('/api/subscription/status', async (req, res) => {
+  const { endpoint } = req.query;
+  if (!endpoint) return res.status(400).json({ error: 'Endpoint is required' });
+  const subscriptions = await db.getSubscriptions();
+  const sub = subscriptions.find(s => s.endpoint === endpoint);
+  res.json({
+    subscribed: !!sub,
+    enabled: sub ? sub.enabled !== false : false
+  });
+});
+
+// 2.6. Toggle notification for current device
+app.post('/api/subscription/toggle', async (req, res) => {
+  const { endpoint, enabled } = req.body;
+  if (!endpoint) return res.status(400).json({ error: 'Endpoint is required' });
+  const isEnabled = enabled !== false;
+  await db.updateSubscriptionEnabled(endpoint, isEnabled);
+  res.json({ success: true, endpoint, enabled: isEnabled });
+});
+
 // 3. List medications + Today status + Hero metric stats
 app.get('/api/medications', async (req, res) => {
   const meds = await db.getMedications();

@@ -166,13 +166,45 @@ async function initServiceWorker() {
 async function checkSubscriptionStatus() {
   if (!swRegistration) return;
 
+  const toggleDeviceNoti = document.getElementById('toggle-device-noti');
+  const deviceNotiDesc = document.getElementById('device-noti-desc');
+  const cardDeviceNoti = document.getElementById('card-device-noti');
+
   try {
     const subscription = await swRegistration.pushManager.getSubscription();
     if (subscription && Notification.permission === 'granted') {
-      updateStatus(true, 'Đã bật thông báo');
+      let isEnabled = true;
+      try {
+        const res = await fetch(`/api/subscription/status?endpoint=${encodeURIComponent(subscription.endpoint)}`);
+        if (res.ok) {
+          const data = await res.json();
+          isEnabled = data.enabled !== false;
+        }
+      } catch (e) {
+        console.warn('Error checking subscription status from server:', e);
+      }
+
+      if (toggleDeviceNoti) {
+        toggleDeviceNoti.checked = isEnabled;
+        toggleDeviceNoti.disabled = false;
+      }
+      if (cardDeviceNoti) cardDeviceNoti.style.display = 'block';
+
+      if (isEnabled) {
+        updateStatus(true, 'Đã bật thông báo');
+        if (deviceNotiDesc) deviceNotiDesc.textContent = 'Nhận thông báo và chuông nhắc khi đến cữ uống thuốc.';
+      } else {
+        updateStatus(false, 'Đã tạm tắt thông báo');
+        if (deviceNotiDesc) deviceNotiDesc.textContent = 'Đã tắt nhận thông báo trên thiết bị này. Các máy khác vẫn nhận bình thường.';
+      }
       permissionBanner.style.display = 'none';
     } else {
       updateStatus(false, 'Chưa bật thông báo');
+      if (toggleDeviceNoti) {
+        toggleDeviceNoti.checked = false;
+        toggleDeviceNoti.disabled = true;
+      }
+      if (deviceNotiDesc) deviceNotiDesc.textContent = 'Cần bấm nút "Bật thông báo ngay" bên dưới để kích hoạt.';
       permissionBanner.style.display = 'flex';
     }
   } catch (err) {
@@ -266,6 +298,17 @@ async function subscribeDevice() {
 
     updateStatus(true, 'Đã bật thông báo');
     permissionBanner.style.display = 'none';
+
+    const toggleDeviceNoti = document.getElementById('toggle-device-noti');
+    const deviceNotiDesc = document.getElementById('device-noti-desc');
+    if (toggleDeviceNoti) {
+      toggleDeviceNoti.checked = true;
+      toggleDeviceNoti.disabled = false;
+    }
+    if (deviceNotiDesc) {
+      deviceNotiDesc.textContent = 'Nhận thông báo và chuông nhắc khi đến cữ uống thuốc.';
+    }
+
     showToast('Kích hoạt thông báo thành công trên thiết bị này!', 'success');
     return subscription;
   } catch (err) {
@@ -948,6 +991,59 @@ function setupVoiceRecognition() {
 // Setup Event Handlers
 function setupEventHandlers() {
   btnEnableNoti.addEventListener('click', subscribeDevice);
+
+  // Toggle notification for current device
+  const toggleDeviceNoti = document.getElementById('toggle-device-noti');
+  if (toggleDeviceNoti) {
+    toggleDeviceNoti.addEventListener('change', async (e) => {
+      const isChecked = e.target.checked;
+      if (!swRegistration) {
+        showToast('Service Worker chưa sẵn sàng.', 'warning');
+        e.target.checked = !isChecked;
+        return;
+      }
+
+      try {
+        const subscription = await swRegistration.pushManager.getSubscription();
+        if (!subscription) {
+          if (isChecked) {
+            await subscribeDevice();
+          } else {
+            e.target.checked = false;
+          }
+          return;
+        }
+
+        const res = await fetch('/api/subscription/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            endpoint: subscription.endpoint,
+            enabled: isChecked
+          })
+        });
+
+        if (res.ok) {
+          const deviceNotiDesc = document.getElementById('device-noti-desc');
+          if (isChecked) {
+            updateStatus(true, 'Đã bật thông báo');
+            if (deviceNotiDesc) deviceNotiDesc.textContent = 'Nhận thông báo và chuông nhắc khi đến cữ uống thuốc.';
+            showToast('Đã bật thông báo trên thiết bị này', 'success');
+          } else {
+            updateStatus(false, 'Đã tạm tắt thông báo');
+            if (deviceNotiDesc) deviceNotiDesc.textContent = 'Đã tắt nhận thông báo trên thiết bị này. Các máy khác vẫn nhận bình thường.';
+            showToast('Đã tắt nhận thông báo trên thiết bị này', 'info');
+          }
+        } else {
+          throw new Error('Server returned ' + res.status);
+        }
+      } catch (err) {
+        console.error('Toggle error:', err);
+        showToast('Lỗi cập nhật: ' + err.message, 'error');
+        e.target.checked = !isChecked;
+      }
+    });
+  }
 
   // Make header status pill clickable to subscribe
   deviceStatus.style.cursor = 'pointer';
