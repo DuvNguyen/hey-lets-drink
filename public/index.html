@@ -249,98 +249,102 @@
       </div>
     </main>
 
-    <!-- ================= TAB 4: THIẾT BỊ & CÀI ĐẶT THÔNG BÁO ================= -->
-    <main id="tab-device" class="tab-panel">
-      <div class="section-header" style="margin-bottom: 14px;">
-        <span class="section-title">Cài Đặt & Thiết Bị</span>
-        <button id="btn-close-settings" class="btn-secondary" style="padding: 6px 12px; font-size: 12px;">← Quay lại</button>
-      </div>
-      <!-- iOS Guide -->
-      <div id="ios-guide" class="ios-guide-box" style="display: none;">
-        <strong>Kích hoạt thông báo trên iPhone (iOS 16.4+):</strong>
-        <p>Để nhận thông báo khi khóa màn hình:</p>
-        <ol>
-          <li>Bấm nút <strong>Chia sẻ (Share) ⎋</strong> ở thanh dưới Safari.</li>
-          <li>Chọn <strong>"Thêm vào Màn hình chính" (Add to Home Screen)</strong>.</li>
-          <li>Mở app từ Màn hình chính và nhấn <strong>Bật thông báo</strong>.</li>
-        </ol>
-      </div>
-
-      <!-- Permission Banner -->
-      <div id="permission-banner" class="permission-banner" style="display: none;">
-        <div>
-          <strong>Chưa kích hoạt thông báo</strong>
-          <p>Bật thông báo để điện thoại rung chuông nhắc nhở đúng cữ uống thuốc.</p>
+    <!-- ================= MODAL: THIẾT BỊ & CÀI ĐẶT THÔNG BÁO ================= -->
+    <div id="settings-modal-backdrop" class="modal-backdrop">
+      <div class="bottom-sheet">
+        <div class="bottom-sheet-handle"></div>
+        <div class="section-header" style="margin-bottom: 14px;">
+          <span class="section-title">Cài Đặt & Thiết Bị</span>
+          <button type="button" id="btn-close-settings" class="btn-secondary" style="padding: 4px 10px; font-size: 12px;">✕ Đóng</button>
         </div>
-        <button id="btn-enable-noti" class="permission-btn">Bật thông báo ngay</button>
-      </div>
 
-      <!-- Device Notification Toggle (Scope: This device only) -->
-      <div class="device-card" id="card-device-noti">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="flex: 1; padding-right: 14px;">
-            <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">
-              Thông báo trên thiết bị này
-            </div>
-            <p id="device-noti-desc" style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
-              Nhận thông báo và chuông nhắc khi đến cữ uống thuốc.
-            </p>
+        <!-- iOS Guide -->
+        <div id="ios-guide" class="ios-guide-box" style="display: none;">
+          <strong>Kích hoạt thông báo trên iPhone (iOS 16.4+):</strong>
+          <p>Để nhận thông báo khi khóa màn hình:</p>
+          <ol>
+            <li>Bấm nút <strong>Chia sẻ (Share) ⎋</strong> ở thanh dưới Safari.</li>
+            <li>Chọn <strong>"Thêm vào Màn hình chính" (Add to Home Screen)</strong>.</li>
+            <li>Mở app từ Màn hình chính và nhấn <strong>Bật thông báo</strong>.</li>
+          </ol>
+        </div>
+
+        <!-- Permission Banner -->
+        <div id="permission-banner" class="permission-banner" style="display: none;">
+          <div>
+            <strong>Chưa kích hoạt thông báo</strong>
+            <p>Bật thông báo để điện thoại rung chuông nhắc nhở đúng cữ uống thuốc.</p>
           </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="toggle-device-noti" checked>
-            <span class="toggle-slider"></span>
-          </label>
+          <button id="btn-enable-noti" class="permission-btn">Bật thông báo ngay</button>
+        </div>
+
+        <!-- Device Notification Toggle (Scope: This device only) -->
+        <div class="device-card" id="card-device-noti">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1; padding-right: 14px;">
+              <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">
+                Thông báo trên thiết bị này
+              </div>
+              <p id="device-noti-desc" style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
+                Nhận thông báo và chuông nhắc khi đến cữ uống thuốc.
+              </p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-device-noti" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Reminder Density Settings -->
+        <div class="device-card">
+          <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">Mật Độ Nhắc Nhở (Reminder Density)</div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+            Tần suất gửi lại thông báo nếu bạn gái chưa bấm "Xác nhận đã uống".
+          </p>
+          <div class="form-group" style="margin-bottom: 0;">
+            <select id="setting-density" class="form-select">
+              <option value="single">Tiêu chuẩn (Đúng giờ hẹn)</option>
+              <option value="double" selected>Nhắc kép (Đúng giờ + sau 10 phút)</option>
+              <option value="strict">Nghiêm ngặt (Đúng giờ + sau 5p + sau 15p)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Vibration Pattern Settings -->
+        <div class="device-card">
+          <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">Kiểu Rung Điện Thoại (Vibration)</div>
+          <div class="form-group" style="margin-bottom: 0; margin-top: 8px;">
+            <select id="setting-vibration" class="form-select">
+              <option value="soft">Nhẹ nhàng (Dành cho giờ nghỉ)</option>
+              <option value="standard" selected>Tiêu chuẩn (2 nhịp chuẩn)</option>
+              <option value="urgent">Mạnh mẽ (3 nhịp dồn)</option>
+            </select>
+          </div>
+          <button id="btn-save-settings" class="btn-primary" style="margin-top: 14px;">Lưu Cài Đặt Thông Báo</button>
+        </div>
+
+        <!-- Test Notification Card -->
+        <div class="device-card">
+          <div style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Kiểm tra chuông & rung</div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+            Bấm nút để thử nghiệm phát âm báo và gửi thông báo màn hình khóa ngay lập tức.
+          </p>
+          <button id="btn-test-push" class="btn-secondary" style="width: 100%; min-height: 44px;">Gửi thử thông báo</button>
+        </div>
+
+        <div class="device-card" style="margin-bottom: 0;">
+          <div style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Hệ thống hẹn giờ Free Tier</div>
+          <p style="font-size: 13px; color: var(--text-muted);">
+            Múi giờ máy chủ: <strong>Asia/Ho_Chi_Minh</strong><br>
+            Tích hợp webhook tự động chống ngủ đông cho máy chủ miễn phí:
+            <code style="display:block; margin-top:6px; font-size:12px; background:var(--surface-subtle); padding:6px; border-radius:4px;">
+              GET /api/cron-trigger
+            </code>
+          </p>
         </div>
       </div>
-
-      <!-- Reminder Density Settings -->
-      <div class="device-card">
-        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">Mật Độ Nhắc Nhở (Reminder Density)</div>
-        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
-          Tần suất gửi lại thông báo nếu bạn gái chưa bấm "Xác nhận đã uống".
-        </p>
-        <div class="form-group" style="margin-bottom: 0;">
-          <select id="setting-density" class="form-select">
-            <option value="single">Tiêu chuẩn (Đúng giờ hẹn)</option>
-            <option value="double" selected>Nhắc kép (Đúng giờ + sau 10 phút)</option>
-            <option value="strict">Nghiêm ngặt (Đúng giờ + sau 5p + sau 15p)</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Vibration Pattern Settings -->
-      <div class="device-card">
-        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">Kiểu Rung Điện Thoại (Vibration)</div>
-        <div class="form-group" style="margin-bottom: 0; margin-top: 8px;">
-          <select id="setting-vibration" class="form-select">
-            <option value="soft">Nhẹ nhàng (Dành cho giờ nghỉ)</option>
-            <option value="standard" selected>Tiêu chuẩn (2 nhịp chuẩn)</option>
-            <option value="urgent">Mạnh mẽ (3 nhịp dồn)</option>
-          </select>
-        </div>
-        <button id="btn-save-settings" class="btn-primary" style="margin-top: 14px;">Lưu Cài Đặt Thông Báo</button>
-      </div>
-
-      <!-- Test Notification Card -->
-      <div class="device-card">
-        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Kiểm tra chuông & rung</div>
-        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
-          Bấm nút để thử nghiệm phát âm báo và gửi thông báo màn hình khóa ngay lập tức.
-        </p>
-        <button id="btn-test-push" class="btn-secondary" style="width: 100%; min-height: 44px;">Gửi thử thông báo</button>
-      </div>
-
-      <div class="device-card">
-        <div style="font-weight: 600; font-size: 14px; color: var(--text-heading);">Hệ thống hẹn giờ Free Tier</div>
-        <p style="font-size: 13px; color: var(--text-muted);">
-          Múi giờ máy chủ: <strong>Asia/Ho_Chi_Minh</strong><br>
-          Tích hợp webhook tự động chống ngủ đông cho máy chủ miễn phí:
-          <code style="display:block; margin-top:6px; font-size:12px; background:var(--surface-subtle); padding:6px; border-radius:4px;">
-            GET /api/cron-trigger
-          </code>
-        </p>
-      </div>
-    </main>
+    </div>
   </div>
 
   <!-- Edit Medication Bottom Sheet Modal -->

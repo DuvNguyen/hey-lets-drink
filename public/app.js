@@ -102,22 +102,56 @@ function setupTabs() {
     });
   });
 
-  // Gear button to open Settings & Device panel
+  // Gear button to open Settings & Device Modal
   const btnSettingsGear = document.getElementById('btn-settings-gear');
   if (btnSettingsGear) {
     btnSettingsGear.addEventListener('click', () => {
-      switchToTab('tab-device');
+      openSettingsModal();
     });
   }
 
-  // Close Settings button to return to Today panel
+  // Close Settings button to dismiss modal
   const btnCloseSettings = document.getElementById('btn-close-settings');
   if (btnCloseSettings) {
     btnCloseSettings.addEventListener('click', () => {
-      switchToTab('tab-today');
+      closeSettingsModal();
     });
   }
+
+  // Backdrop click to close Settings Modal
+  const settingsModal = document.getElementById('settings-modal-backdrop');
+  if (settingsModal) {
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        closeSettingsModal();
+      }
+    });
+  }
+
+  // Keyboard Escape key to dismiss open modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeSettingsModal();
+      if (typeof closeEditModal === 'function') closeEditModal();
+      if (typeof closeStreakModal === 'function') closeStreakModal();
+    }
+  });
 }
+
+window.openSettingsModal = function() {
+  const modal = document.getElementById('settings-modal-backdrop');
+  if (modal) {
+    modal.classList.add('open');
+    checkSubscriptionStatus();
+  }
+};
+
+window.closeSettingsModal = function() {
+  const modal = document.getElementById('settings-modal-backdrop');
+  if (modal) {
+    modal.classList.remove('open');
+  }
+};
 
 function switchToTab(tabId) {
   const tabBtns = document.querySelectorAll('.tab-btn');
