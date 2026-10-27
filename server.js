@@ -464,25 +464,43 @@ app.get('/api/medications', async (req, res) => {
   const totalCompletedAllTime = logs.filter(l => l.status === 'TAKEN').length;
   
   // Calculate consecutive days streak
-  const uniqueDates = [...new Set(logs.filter(l => l.status === 'TAKEN').map(l => l.date))].sort().reverse();
+  // Strict Rule: A day only counts towards streak if ALL scheduled medications for that day were taken!
+  function isDateFullyCompleted(dStr) {
+    const [yyyy, mm, dd] = dStr.split('-').map(Number);
+    const dateObj = new Date(yyyy, mm - 1, dd, 12, 0, 0);
+    const scheduled = meds.filter(m => isMedicationScheduledForToday(m, dateObj));
+    if (!scheduled.length) return false;
+    const takenIds = new Set(
+      logs
+        .filter(l => l.date === dStr && l.status === 'TAKEN')
+        .map(l => l.medicationId)
+    );
+    return scheduled.every(m => takenIds.has(m.id));
+  }
+
+  const isTodayCompleted = totalToday > 0 && completedToday >= totalToday;
   let streak = 0;
-  if (uniqueDates.length > 0) {
-    let checkDate = new Date(vnTime);
-    const todayTaken = uniqueDates.includes(today);
-    if (!todayTaken) {
+
+  let checkDate = new Date(vnTime);
+  if (isTodayCompleted) {
+    // All medications completed today -> count today!
+    streak++;
+    checkDate.setDate(checkDate.getDate() - 1);
+  } else {
+    // Today has remaining medications (e.g. 6/7) -> do not count today yet, check consecutive streak up to yesterday
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+
+  while (true) {
+    const yyyy = checkDate.getFullYear();
+    const mm = String(checkDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(checkDate.getDate()).padStart(2, '0');
+    const dStr = `${yyyy}-${mm}-${dd}`;
+    if (isDateFullyCompleted(dStr)) {
+      streak++;
       checkDate.setDate(checkDate.getDate() - 1);
-    }
-    while (true) {
-      const yyyy = checkDate.getFullYear();
-      const mm = String(checkDate.getMonth() + 1).padStart(2, '0');
-      const dd = String(checkDate.getDate()).padStart(2, '0');
-      const dStr = `${yyyy}-${mm}-${dd}`;
-      if (uniqueDates.includes(dStr)) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
+    } else {
+      break;
     }
   }
 

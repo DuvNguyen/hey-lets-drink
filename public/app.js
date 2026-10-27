@@ -1214,7 +1214,6 @@ function setupEventHandlers() {
 
   // Save Notification Settings
   const btnSaveSettings = document.getElementById('btn-save-settings');
-  const densitySelect = document.getElementById('setting-density');
   const vibrationSelect = document.getElementById('setting-vibration');
   if (btnSaveSettings) {
     btnSaveSettings.addEventListener('click', async () => {
@@ -1225,11 +1224,11 @@ function setupEventHandlers() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            density: densitySelect ? densitySelect.value : 'double',
             vibration: vibrationSelect ? vibrationSelect.value : 'standard'
           })
         });
         if (res.ok) {
+          showToast('Đã lưu cài đặt thông báo!', 'success');
           btnSaveSettings.textContent = 'Đã lưu cài đặt!';
           setTimeout(() => {
             btnSaveSettings.textContent = 'Lưu Cài Đặt Thông Báo';
@@ -1238,6 +1237,7 @@ function setupEventHandlers() {
         }
       } catch (err) {
         console.error('Error saving settings:', err);
+        showToast('Lỗi khi lưu: ' + err.message, 'error');
         btnSaveSettings.textContent = 'Lưu Cài Đặt Thông Báo';
         btnSaveSettings.disabled = false;
       }
