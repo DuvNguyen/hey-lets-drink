@@ -306,6 +306,32 @@ app.delete('/api/admin/devices', async (req, res) => {
   res.json({ success: true, endpoint });
 });
 
+// Admin API: Auto cleanup obsolete duplicate subscriptions (keeps latest per device type)
+app.post('/api/admin/devices/cleanup', async (req, res) => {
+  const subs = await db.getSubscriptions();
+  const seen = new Map();
+  const toDelete = [];
+
+  // Sort by subscribedAt DESC (latest first)
+  subs.sort((a, b) => new Date(b.subscribedAt) - new Date(a.subscribedAt));
+
+  for (const sub of subs) {
+    const key = sub.deviceInfo ? sub.deviceInfo.trim() : sub.endpoint;
+    if (seen.has(key)) {
+      toDelete.push(sub.endpoint);
+    } else {
+      seen.set(key, sub.endpoint);
+    }
+  }
+
+  for (const ep of toDelete) {
+    await db.removeSubscription(ep);
+  }
+
+  console.log(`[Admin Cleanup] Removed ${toDelete.length} duplicate/obsolete subscriptions.`);
+  res.json({ success: true, removedCount: toDelete.length });
+});
+
 // Admin API: Update Escalation Config
 app.post('/api/admin/escalation-config', async (req, res) => {
   const updated = await db.updateEscalation(req.body);
@@ -358,9 +384,21 @@ app.post('/api/subscribe', async (req, res) => {
   }
 
   const deviceInfo = req.headers['user-agent'] || '';
+
+  // Clean up older obsolete endpoints with the identical device info to prevent duplicate ghost devices
+  if (deviceInfo) {
+    const existingSubs = await db.getSubscriptions();
+    for (const oldSub of existingSubs) {
+      if (oldSub.deviceInfo === deviceInfo && oldSub.endpoint !== subscription.endpoint) {
+        console.log('[Subscribe] Removing previous obsolete endpoint for same device:', oldSub.endpoint.slice(0, 30));
+        await db.removeSubscription(oldSub.endpoint);
+      }
+    }
+  }
+
   await db.addSubscription(subscription, deviceInfo);
   const subscriptions = await db.getSubscriptions();
-  console.log('[Subscribe] Device registered in Neon DB. Total devices:', subscriptions.length);
+  console.log('[Subscribe] Device registered in Neon DB. Total active devices:', subscriptions.length);
 
   res.status(201).json({ status: 'subscribed', totalDevices: subscriptions.length });
 });
