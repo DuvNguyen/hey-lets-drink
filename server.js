@@ -75,18 +75,19 @@ function isMedicationScheduledForToday(med, vnTime = getVNTime()) {
   return true;
 }
 
-// Push Notification Dispatcher
+// Push Notification Dispatcher (Respects per-device enabled status)
 async function broadcastPush(payload) {
   const subscriptions = await db.getSubscriptions();
-  if (!subscriptions.length) {
-    console.log('[Push] No active subscriptions found.');
-    return { sent: 0, failed: 0 };
+  const activeSubs = subscriptions.filter(sub => sub.enabled !== false);
+  if (!activeSubs.length) {
+    console.log('[Push] No active/enabled subscriptions found (All devices muted or none registered).');
+    return { sent: 0, failed: 0, total: subscriptions.length, active: 0 };
   }
 
   let sent = 0;
   let failed = 0;
 
-  for (const sub of subscriptions) {
+  for (const sub of activeSubs) {
     try {
       await webpush.sendNotification(sub, JSON.stringify(payload), {
         TTL: 86400,
@@ -103,7 +104,7 @@ async function broadcastPush(payload) {
     }
   }
 
-  return { sent, failed };
+  return { sent, failed, total: subscriptions.length, active: activeSubs.length };
 }
 
 function getVibrationPattern(vib) {
@@ -263,9 +264,46 @@ app.get('/api/admin/status', async (req, res) => {
     date: today,
     currentTime,
     totalDevices: subscriptions.length,
+    activeDevices: subscriptions.filter(s => s.enabled !== false).length,
     escalation,
     todayMeds
   });
+});
+
+// Admin API: List all devices with enabled status
+app.get('/api/admin/devices', async (req, res) => {
+  const subscriptions = await db.getSubscriptions();
+  res.json({
+    total: subscriptions.length,
+    active: subscriptions.filter(s => s.enabled !== false).length,
+    devices: subscriptions.map(sub => ({
+      endpoint: sub.endpoint,
+      deviceInfo: sub.deviceInfo,
+      subscribedAt: sub.subscribedAt,
+      enabled: sub.enabled !== false
+    }))
+  });
+});
+
+// Admin API: Toggle notification on/off for a specific device
+app.post('/api/admin/devices/toggle', async (req, res) => {
+  const { endpoint, enabled } = req.body;
+  if (!endpoint) {
+    return res.status(400).json({ error: 'Endpoint is required' });
+  }
+  const isEnabled = enabled !== false;
+  await db.updateSubscriptionEnabled(endpoint, isEnabled);
+  res.json({ success: true, endpoint, enabled: isEnabled });
+});
+
+// Admin API: Remove/Unregister a dead or unwanted device
+app.delete('/api/admin/devices', async (req, res) => {
+  const { endpoint } = req.body;
+  if (!endpoint) {
+    return res.status(400).json({ error: 'Endpoint is required' });
+  }
+  await db.removeSubscription(endpoint);
+  res.json({ success: true, endpoint });
 });
 
 // Admin API: Update Escalation Config

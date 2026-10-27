@@ -123,8 +123,14 @@ async function initDb() {
         endpoint TEXT PRIMARY KEY,
         keys JSONB NOT NULL,
         subscribed_at TIMESTAMPTZ DEFAULT NOW(),
-        device_info TEXT
+        device_info TEXT,
+        enabled BOOLEAN DEFAULT true
       );
+    `;
+
+    // Ensure 'enabled' column exists if table was created earlier without it
+    await sql`
+      ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT true;
     `;
 
     await sql`
@@ -304,15 +310,20 @@ async function addLog(logEntry) {
 async function getSubscriptions() {
   if (sql) {
     await initDb();
-    const rows = await sql`SELECT * FROM subscriptions`;
+    const rows = await sql`SELECT * FROM subscriptions ORDER BY subscribed_at DESC`;
     return rows.map(r => ({
       endpoint: r.endpoint,
       keys: r.keys,
       subscribedAt: r.subscribed_at,
-      deviceInfo: r.device_info
+      deviceInfo: r.device_info,
+      enabled: r.enabled !== false
     }));
   }
-  return readJSON(SUBS_FILE, []);
+  const subs = readJSON(SUBS_FILE, []);
+  return subs.map(s => ({
+    ...s,
+    enabled: s.enabled !== false
+  }));
 }
 
 async function addSubscription(sub, deviceInfo = '') {
@@ -320,8 +331,8 @@ async function addSubscription(sub, deviceInfo = '') {
   if (sql) {
     await initDb();
     await sql`
-      INSERT INTO subscriptions (endpoint, keys, device_info, subscribed_at)
-      VALUES (${sub.endpoint}, ${JSON.stringify(sub.keys)}::jsonb, ${deviceInfo}, NOW())
+      INSERT INTO subscriptions (endpoint, keys, device_info, subscribed_at, enabled)
+      VALUES (${sub.endpoint}, ${JSON.stringify(sub.keys)}::jsonb, ${deviceInfo}, NOW(), true)
       ON CONFLICT (endpoint) DO UPDATE
       SET keys = ${JSON.stringify(sub.keys)}::jsonb,
           device_info = ${deviceInfo},
@@ -332,12 +343,34 @@ async function addSubscription(sub, deviceInfo = '') {
   const subs = readJSON(SUBS_FILE, []);
   const idx = subs.findIndex(s => s.endpoint === sub.endpoint);
   if (idx >= 0) {
-    subs[idx] = sub;
+    subs[idx] = { ...subs[idx], keys: sub.keys, deviceInfo, subscribedAt: new Date().toISOString() };
   } else {
-    subs.push(sub);
+    subs.push({ ...sub, deviceInfo, subscribedAt: new Date().toISOString(), enabled: true });
   }
   writeJSON(SUBS_FILE, subs);
   return sub;
+}
+
+async function updateSubscriptionEnabled(endpoint, enabled) {
+  if (!endpoint) return false;
+  const isEnabled = enabled !== false;
+  if (sql) {
+    await initDb();
+    await sql`
+      UPDATE subscriptions
+      SET enabled = ${isEnabled}
+      WHERE endpoint = ${endpoint};
+    `;
+    return true;
+  }
+  const subs = readJSON(SUBS_FILE, []);
+  const found = subs.find(s => s.endpoint === endpoint);
+  if (found) {
+    found.enabled = isEnabled;
+    writeJSON(SUBS_FILE, subs);
+    return true;
+  }
+  return false;
 }
 
 async function removeSubscription(endpoint) {
@@ -437,6 +470,7 @@ module.exports = {
   addLog,
   getSubscriptions,
   addSubscription,
+  updateSubscriptionEnabled,
   removeSubscription,
   getSettings,
   updateSettings,
