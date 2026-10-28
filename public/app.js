@@ -1792,11 +1792,7 @@ function formatNoteTime(isoString) {
 }
 
 function checkSaturdayBanner() {
-  const isSaturday = (new Date()).getDay() === 6;
-  const banner = document.getElementById('saturday-banner');
-  if (banner) {
-    banner.style.display = isSaturday ? 'block' : 'none';
-  }
+  // Description and banners removed per user request
 }
 
 function formatChatDay(isoString) {
