@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>V&D</title>
   
+  <script>
+    (function() {
+      try {
+        var s = JSON.parse(localStorage.getItem('hey_drink_session') || '{}');
+        if (s && s.role) {
+          document.documentElement.classList.add('has-auth-session');
+        }
+      } catch (_) {}
+    })();
+  </script>
+
   <!-- PWA & Mobile Meta Tags -->
   <meta name="theme-color" content="#3165F5">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,7 +25,12 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="icon" type="image/png" href="/image/logo.png">
-  <link rel="stylesheet" href="/style.css?v=14">
+  <link rel="stylesheet" href="/style.css?v=15">
+  <style>
+    html.has-auth-session #pin-lock-overlay {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
@@ -706,6 +722,6 @@
   <div id="app-toast" class="toast-notification"></div>
 
   <script src="/neon-realtime.js"></script>
-  <script src="/app.js?v=14"></script>
+  <script src="/app.js?v=15"></script>
 </body>
 </html>

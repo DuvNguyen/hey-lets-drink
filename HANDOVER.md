@@ -157,6 +157,12 @@ flowchart TD
   - Nhận chuông nhắc đúng giờ cữ thuốc và chuông cảnh báo trễ cữ Anki (10p, 15p, 17p).
   - Tuyệt đối **không** nhận thông báo tin nhắn từ chính mình gửi khi uống thuốc.
 
+### 4.7. Zero-Flicker Navigation (Khắc phục FOUC khi chuyển sang Admin)
+- Nhúng script đồng bộ siêu nhẹ trong `<head>` của cả `index.html` và `admin.html`.
+- Kiểm tra `localStorage.getItem('hey_drink_session')` ngay trong pha parsing HTML (trước khi trình duyệt bắt đầu render trang).
+- Gắn class `has-admin-session` / `has-auth-session` vào thẻ `<html>` và áp dụng `display: none !important;` cho overlay mã PIN.
+- Loại bỏ 100% hiện tượng chớp/nháy (flicker) màn hình passcode khi chuyển qua lại giữa trang chính và trang quản trị Admin.
+
 ---
 
 ## 6. Verification Checklist

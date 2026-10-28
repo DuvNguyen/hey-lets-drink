@@ -1505,6 +1505,12 @@ input[type="time"] {
   pointer-events: none;
 }
 
+/* Prevent Passcode Screen Flicker on Navigation */
+html.has-admin-session #admin-pin-overlay,
+html.has-auth-session #pin-lock-overlay {
+  display: none !important;
+}
+
 .pin-lock-container {
   width: 100%;
   max-width: 320px;

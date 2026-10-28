@@ -4,9 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Quản Trị — V&D</title>
+  <script>
+    (function() {
+      try {
+        var s = JSON.parse(localStorage.getItem('hey_drink_session') || '{}');
+        if (s && s.role === 'admin') {
+          document.documentElement.classList.add('has-admin-session');
+        }
+      } catch (_) {}
+    })();
+  </script>
   <link rel="icon" type="image/png" href="/image/logo.png">
-  <link rel="stylesheet" href="/style.css?v=14">
+  <link rel="stylesheet" href="/style.css?v=15">
   <style>
+    html.has-admin-session #admin-pin-overlay {
+      display: none !important;
+    }
     .admin-header-row {
       display: flex;
       justify-content: space-between;
@@ -702,9 +715,11 @@
         try {
           const session = JSON.parse(rawSession);
           if (session && session.role === 'admin') {
+            document.documentElement.classList.add('has-admin-session');
             if (overlay) overlay.classList.add('hidden');
             return true;
           } else if (session && session.role === 'girlfriend') {
+            document.documentElement.classList.remove('has-admin-session');
             if (overlay) overlay.classList.remove('hidden');
             if (subtitle) subtitle.textContent = 'Tài khoản hiện tại không có quyền quản trị. Nhập mã PIN Admin để tiếp tục.';
             return false;
@@ -714,6 +729,7 @@
         }
       }
 
+      document.documentElement.classList.remove('has-admin-session');
       if (overlay) overlay.classList.remove('hidden');
       return false;
     }
@@ -795,6 +811,7 @@
             loggedAt: Date.now()
           }));
 
+          document.documentElement.classList.add('has-admin-session');
           const overlay = document.getElementById('admin-pin-overlay');
           if (overlay) overlay.classList.add('hidden');
 
@@ -1426,6 +1443,7 @@
 
           if (confirmed) {
             localStorage.removeItem('hey_drink_session');
+            document.documentElement.classList.remove('has-admin-session');
             closeAdminSettings();
             const overlay = document.getElementById('admin-pin-overlay');
             if (overlay) overlay.classList.remove('hidden');

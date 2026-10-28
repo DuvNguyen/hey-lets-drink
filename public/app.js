@@ -324,6 +324,7 @@ function checkAuthSession() {
     try {
       const session = JSON.parse(rawSession);
       if (session && session.role) {
+        document.documentElement.classList.add('has-auth-session');
         if (overlay) overlay.classList.add('hidden');
         const roleLabel = (session.role === 'admin') ? 'Vi' : 'Duyen';
         if (sessionRoleBadge) {
@@ -351,6 +352,7 @@ function checkAuthSession() {
   }
 
   // Not authenticated: display PIN screen
+  document.documentElement.classList.remove('has-auth-session');
   if (overlay) overlay.classList.remove('hidden');
   if (adminLink) adminLink.style.display = 'none';
   resetPinState();
@@ -420,6 +422,7 @@ async function handlePinSubmit() {
         loggedAt: Date.now()
       }));
 
+      document.documentElement.classList.add('has-auth-session');
       const overlay = document.getElementById('pin-lock-overlay');
       if (overlay) overlay.classList.add('hidden');
 
@@ -545,6 +548,7 @@ function setupAuthHandlers() {
 
       if (confirmed) {
         localStorage.removeItem('hey_drink_session');
+        document.documentElement.classList.remove('has-auth-session');
         closeSettingsModal();
         updateBrandGreeting(null, null);
         const overlay = document.getElementById('pin-lock-overlay');
