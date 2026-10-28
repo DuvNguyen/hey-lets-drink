@@ -1,4 +1,16 @@
 require('dotenv').config();
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
+process.on('uncaughtException', (err) => {
+  console.error('[Process UncaughtException]', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[Process UnhandledRejection]', reason);
+});
+
 const express = require('express');
 const cors = require('cors');
 const webpush = require('web-push');
@@ -31,7 +43,13 @@ webpush.setVapidDetails(
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    }
+  }
+}));
 
 // Date/Time Helpers (Asia/Ho_Chi_Minh)
 function getVNTime() {
@@ -75,19 +93,12 @@ function isMedicationScheduledForToday(med, vnTime = getVNTime()) {
   return true;
 }
 
-// Push Notification Dispatcher (Respects per-device enabled status)
-async function broadcastPush(payload) {
-  const subscriptions = await db.getSubscriptions();
-  const activeSubs = subscriptions.filter(sub => sub.enabled !== false);
-  if (!activeSubs.length) {
-    console.log('[Push] No active/enabled subscriptions found (All devices muted or none registered).');
-    return { sent: 0, failed: 0, total: subscriptions.length, active: 0 };
-  }
-
+// Push Notification Dispatchers
+async function dispatchPushToSubscriptions(subs, payload) {
   let sent = 0;
   let failed = 0;
 
-  for (const sub of activeSubs) {
+  for (const sub of subs) {
     try {
       await webpush.sendNotification(sub, JSON.stringify(payload), {
         TTL: 86400,
@@ -104,7 +115,39 @@ async function broadcastPush(payload) {
     }
   }
 
-  return { sent, failed, total: subscriptions.length, active: activeSubs.length };
+  return { sent, failed };
+}
+
+// Push to Girlfriend devices only (for medication reminders, Anki escalations, nudges)
+async function sendPushToGirlfriend(payload) {
+  const subscriptions = await db.getSubscriptions();
+  const targets = subscriptions.filter(s => s.enabled !== false && (s.role === 'girlfriend' || !s.role));
+  if (!targets.length) {
+    console.log('[Push Girlfriend] No active girlfriend subscriptions found.');
+    return { sent: 0, failed: 0 };
+  }
+  return await dispatchPushToSubscriptions(targets, payload);
+}
+
+// Push to Admin / Boyfriend devices only (for girlfriend's take + note messages)
+async function sendPushToAdmin(payload) {
+  const subscriptions = await db.getSubscriptions();
+  const targets = subscriptions.filter(s => s.enabled !== false && s.role === 'admin');
+  if (!targets.length) {
+    console.log('[Push Admin] No active admin subscriptions found.');
+    return { sent: 0, failed: 0 };
+  }
+  return await dispatchPushToSubscriptions(targets, payload);
+}
+
+// Broadcast to all active subscriptions (fallback)
+async function broadcastPush(payload) {
+  const subscriptions = await db.getSubscriptions();
+  const activeSubs = subscriptions.filter(sub => sub.enabled !== false);
+  if (!activeSubs.length) {
+    return { sent: 0, failed: 0, total: subscriptions.length, active: 0 };
+  }
+  return await dispatchPushToSubscriptions(activeSubs, payload);
 }
 
 function getVibrationPattern(vib) {
@@ -155,23 +198,23 @@ async function checkAndSendReminders() {
         // Stage 1: 10 minutes overdue
         shouldTrigger = true;
         reminderTitle = `[Quá giờ 10p] ${med.name}`;
-        reminderBody = `${escalation.stage1Message || 'Quá giờ 10p rồi, em mau uống thuốc nha!'} (Cữ ${med.time})`;
+        reminderBody = `${escalation.stage1Message || 'Đã quá giờ 10 phút. Vui lòng uống thuốc và xác nhận.'} (Cữ ${med.time})`;
       } else if (diffMinutes === 15) {
         // Stage 2: 5 minutes later
         shouldTrigger = true;
         reminderTitle = `[Quá giờ 15p] ${med.name}`;
-        reminderBody = `${escalation.stage2Message || 'Em ơi, quá 15p rồi chưa uống thuốc nè!'} (Cữ ${med.time})`;
+        reminderBody = `${escalation.stage2Message || 'Đã quá giờ 15 phút. Vui lòng uống thuốc.'} (Cữ ${med.time})`;
       } else if (diffMinutes === 17) {
         // Stage 3: 2 minutes later
         shouldTrigger = true;
         reminderTitle = `[Quá giờ 17p] ${med.name}`;
-        reminderBody = `${escalation.stage3Message || 'Uống thuốc ngay nha em, trễ nhiều rồi đó!'} (Cữ ${med.time})`;
+        reminderBody = `${escalation.stage3Message || 'Đã quá giờ 17 phút. Nhắc nhở uống thuốc lần 4.'} (Cữ ${med.time})`;
         vibration = [300, 100, 300, 100, 300];
       } else if (diffMinutes >= 18) {
         // Stage 4: High urgency -> Fires EVERY 1 MINUTE until marked done!
         shouldTrigger = true;
         reminderTitle = `[Khẩn cấp: Quá giờ ${diffMinutes}p] ${med.name}`;
-        reminderBody = `${escalation.stage4Message || 'Khẩn cấp: Mau uống thuốc rồi bấm xác nhận cho anh!'} (Cữ ${med.time})`;
+        reminderBody = `${escalation.stage4Message || 'Khẩn cấp: Cữ thuốc đã quá hạn. Vui lòng uống thuốc ngay.'} (Cữ ${med.time})`;
         vibration = [400, 100, 400, 100, 400, 100, 500];
       }
     }
@@ -184,7 +227,7 @@ async function checkAndSendReminders() {
 
     if (shouldTrigger) {
       console.log(`[Reminder Triggered] ${reminderTitle} at ${currentTime} (Overdue: ${diffMinutes}m)`);
-      await broadcastPush({
+      await sendPushToGirlfriend({
         title: reminderTitle,
         body: reminderBody,
         tag: `med-${med.id}-${today}`,
@@ -254,6 +297,7 @@ app.get('/api/admin/status', async (req, res) => {
         ...med,
         isTaken,
         takenAt: todayLog ? todayLog.takenAt : null,
+        note: todayLog ? todayLog.note : null,
         isOverdue,
         diffMinutes: Math.max(0, diffMinutes),
         urgencyState
@@ -338,21 +382,21 @@ app.post('/api/admin/escalation-config', async (req, res) => {
   res.json({ success: true, escalation: updated });
 });
 
-// Admin API: Boyfriend manual instant nudge
+// Admin API: Manual instant nudge
 app.post('/api/admin/nudge', async (req, res) => {
   const { message } = req.body;
   const currentTime = getCurrentTimeString();
-  const nudgeText = message || 'Anh nhắc em nè: mau uống thuốc đúng cữ nha!';
+  const nudgeText = message || 'Nhắc nhở: Đến cữ uống thuốc, vui lòng kiểm tra và xác nhận.';
 
   const payload = {
-    title: 'Lời nhắc từ bạn trai 💬',
+    title: 'Lời nhắc uống thuốc 💬',
     body: `${nudgeText} (${currentTime})`,
     tag: `nudge-${Date.now()}`,
     vibrate: [300, 100, 300, 100, 500],
     data: { url: '/' }
   };
 
-  const result = await broadcastPush(payload);
+  const result = await sendPushToGirlfriend(payload);
   res.json({
     success: true,
     sentTo: result.sent,
@@ -374,6 +418,75 @@ app.get('/api/settings', async (req, res) => {
 app.post('/api/settings', async (req, res) => {
   const updated = await db.updateSettings(req.body);
   res.json({ success: true, settings: updated });
+});
+
+// ----------------- Authentication & PIN APIs -----------------
+app.post('/api/auth/verify-pin', async (req, res) => {
+  const { pin, endpoint } = req.body;
+  if (!pin) return res.status(400).json({ error: 'PIN is required' });
+
+  const pins = await db.getAuthPins();
+  const inputPin = String(pin).trim();
+
+  let role = null;
+  let displayName = '';
+  if (inputPin === String(pins.adminPin).trim()) {
+    role = 'admin';
+    displayName = 'Vi';
+  } else if (inputPin === String(pins.girlfriendPin).trim()) {
+    role = 'girlfriend';
+    displayName = 'Duyen';
+  }
+
+  if (!role) {
+    return res.status(401).json({ error: 'Mã PIN không đúng. Vui lòng thử lại.' });
+  }
+
+  // Associate endpoint with role if available
+  if (endpoint) {
+    await db.updateSubscriptionRole(endpoint, role);
+    console.log(`[Auth] Registered endpoint with role: ${role}`);
+  }
+
+  const token = `${role}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  res.json({
+    success: true,
+    role,
+    displayName,
+    token
+  });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    return res.json({ authenticated: false, role: null });
+  }
+  const role = token.startsWith('admin_') ? 'admin' : (token.startsWith('girlfriend_') ? 'girlfriend' : null);
+  res.json({
+    authenticated: !!role,
+    role
+  });
+});
+
+// Admin API: Get current PINs
+app.get('/api/admin/pins', async (req, res) => {
+  const pins = await db.getAuthPins();
+  res.json(pins);
+});
+
+// Admin API: Update PINs
+app.post('/api/admin/update-pins', async (req, res) => {
+  const { girlfriendPin, adminPin } = req.body;
+  if (!girlfriendPin || !adminPin) {
+    return res.status(400).json({ error: 'Cần nhập cả 2 mã PIN' });
+  }
+  const updated = await db.updateAuthPins({
+    girlfriendPin: String(girlfriendPin).trim(),
+    adminPin: String(adminPin).trim()
+  });
+  res.json({ success: true, pins: updated });
 });
 
 // 2. Register/Subscribe device
@@ -608,9 +721,10 @@ app.delete('/api/medications/:id', async (req, res) => {
   res.json({ success, message: 'Deleted' });
 });
 
-// 6. Mark medication as taken
+// 6. Mark medication as taken (supports girlfriend optional message note)
 app.post('/api/medications/:id/take', async (req, res) => {
   const { id } = req.params;
+  const { note } = req.body || {};
   const meds = await db.getMedications();
   const med = meds.find(m => m.id === id);
   if (!med) {
@@ -619,15 +733,33 @@ app.post('/api/medications/:id/take', async (req, res) => {
 
   const today = getTodayString();
   const currentTime = getCurrentTimeString();
+  const girlfriendNote = note ? String(note).trim() : null;
+
   const logEntry = {
     medicationId: id,
     medicationName: med.name,
     date: today,
     status: 'TAKEN',
-    takenAt: currentTime
+    takenAt: currentTime,
+    note: girlfriendNote
   };
 
   await db.addLog(logEntry);
+
+  // Send Push Notification to Admin STRICTLY only when there is a message note
+  if (girlfriendNote) {
+    try {
+      await sendPushToAdmin({
+        title: 'Ghi chú cữ thuốc 💬',
+        body: `"${girlfriendNote}" (${med.name} - cữ ${currentTime})`,
+        tag: `admin-note-${id}-${Date.now()}`,
+        data: { url: '/admin' }
+      });
+    } catch (pushErr) {
+      console.error('[Push to Admin Failed]', pushErr.message);
+    }
+  }
+
   res.json({ success: true, log: logEntry });
 });
 
@@ -637,18 +769,96 @@ app.get('/api/realtime/sealed-queries', async (req, res) => {
     if (!process.env.NEON_REALTIME_SECRET || !process.env.NEON_REALTIME_URL) {
       return res.status(503).json({ success: false, error: 'Neon Realtime not configured' });
     }
-    const [sealedMeds, sealedLogs] = await Promise.all([
+    const [sealedMeds, sealedLogs, sealedNotes] = await Promise.all([
       db.sealRealtimeQuery('SELECT id, name, dosage, time, frequency, active FROM medications', []),
-      db.sealRealtimeQuery('SELECT id, medication_id, status, date, taken_at FROM logs ORDER BY id DESC LIMIT 20', [])
+      db.sealRealtimeQuery('SELECT id, medication_id, status, date, taken_at FROM logs ORDER BY id DESC LIMIT 20', []),
+      db.sealRealtimeQuery('SELECT id, author_role, author_name, content, created_at, read_by_other_at, is_edited, edited_at FROM shared_notes ORDER BY created_at DESC LIMIT 50', [])
     ]);
     res.json({
       success: true,
       url: process.env.NEON_REALTIME_URL,
       sealedMeds,
-      sealedLogs
+      sealedLogs,
+      sealedNotes
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Shared Notes Endpoints (Saturday / Weekly Check-in Notes)
+// Note: External Push Notifications are STRICTLY NOT sent for notes.
+app.get('/api/notes', async (req, res) => {
+  try {
+    const role = req.query.role === 'admin' ? 'admin' : 'girlfriend';
+    const notes = await db.getSharedNotes();
+    const unreadCount = notes.filter(n => n.authorRole !== role && !n.readByOtherAt).length;
+    res.json({ success: true, notes, unreadCount });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/notes', async (req, res) => {
+  try {
+    const { content, role } = req.body || {};
+    if (!content || !String(content).trim()) {
+      return res.status(400).json({ error: 'Nội dung ghi chú không được để trống' });
+    }
+    const authorRole = role === 'admin' ? 'admin' : 'girlfriend';
+    const authorName = authorRole === 'admin' ? 'Vi' : 'Duyen';
+    const trimmed = String(content).trim().slice(0, 2000);
+
+    const note = await db.addSharedNote({
+      authorRole,
+      authorName,
+      content: trimmed
+    });
+
+    // NOTE: Strictly no push notifications! As requested: check inside web app only.
+    res.status(201).json({ success: true, note });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/notes/mark-read', async (req, res) => {
+  try {
+    const { role } = req.body || {};
+    const viewerRole = role === 'admin' ? 'admin' : 'girlfriend';
+    await db.markNotesAsRead(viewerRole);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/notes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content, role } = req.body || {};
+    if (!content || !String(content).trim()) {
+      return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống.' });
+    }
+    const requesterRole = role === 'admin' ? 'admin' : 'girlfriend';
+    const updated = await db.updateSharedNote(id, {
+      content: String(content).trim().slice(0, 3000),
+      requesterRole
+    });
+    res.json({ success: true, note: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/notes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const role = req.query.role || req.body?.role || 'girlfriend';
+    await db.deleteSharedNote(id, role);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
   }
 });
 
@@ -784,7 +994,15 @@ app.post('/api/test-push', async (req, res) => {
     }
   }
 
-  const result = await broadcastPush(payload);
+  if (req.body && req.body.target === 'admin') {
+    const result = await sendPushToAdmin(payload);
+    return res.json({
+      status: 'sent',
+      details: result
+    });
+  }
+
+  const result = await sendPushToGirlfriend(payload);
   res.json({
     status: 'sent',
     details: result

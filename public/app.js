@@ -52,6 +52,9 @@ let isRecording = false;
 document.addEventListener('DOMContentLoaded', async () => {
   setupTabs();
   detectIOSStandalone();
+  checkAuthSession();
+  setupAuthHandlers();
+  setupTakeNoteModal();
   await initServiceWorker();
   await checkSubscriptionStatus();
   await loadMedications();
@@ -59,7 +62,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEditModal();
   setupVoiceRecognition();
   setupEventHandlers();
+  setupNotesHandlers();
+  loadNotes(false);
   initNeonRealtime();
+
+  // Background quiet check for notes every 30s
+  setInterval(() => {
+    const notesModal = document.getElementById('notes-modal-backdrop');
+    const isOpen = notesModal && notesModal.classList.contains('open');
+    loadNotes(isOpen);
+  }, 30000);
 
   const streakBackdrop = document.getElementById('streak-celebration-backdrop');
   if (streakBackdrop) {
@@ -132,6 +144,7 @@ function setupTabs() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeSettingsModal();
+      if (typeof closeNotesModal === 'function') closeNotesModal();
       if (typeof closeEditModal === 'function') closeEditModal();
       if (typeof closeStreakModal === 'function') closeStreakModal();
     }
@@ -148,6 +161,21 @@ window.openSettingsModal = function() {
 
 window.closeSettingsModal = function() {
   const modal = document.getElementById('settings-modal-backdrop');
+  if (modal) {
+    modal.classList.remove('open');
+  }
+};
+
+window.openNotesModal = function() {
+  const modal = document.getElementById('notes-modal-backdrop');
+  if (modal) {
+    modal.classList.add('open');
+    loadNotes(true);
+  }
+};
+
+window.closeNotesModal = function() {
+  const modal = document.getElementById('notes-modal-backdrop');
   if (modal) {
     modal.classList.remove('open');
   }
@@ -244,6 +272,354 @@ async function checkSubscriptionStatus() {
   } catch (err) {
     console.error('Error checking subscription:', err);
   }
+}
+
+// ----------------------------------------------------
+// Authentication & MoMo PIN Lock
+// ----------------------------------------------------
+let pinDigits = '';
+
+function updateBrandGreeting(role, displayName) {
+  const brandTitle = document.getElementById('app-brand-title');
+  if (!brandTitle) return;
+  if (!role && !displayName) {
+    brandTitle.textContent = "Hey Let's Drink";
+    return;
+  }
+  const name = (role === 'admin' || displayName === 'Vi' || displayName === 'Vĩ') ? 'Vi' : 'Duyen';
+  brandTitle.textContent = `Hi, ${name}`;
+}
+
+function checkAuthSession() {
+  const overlay = document.getElementById('pin-lock-overlay');
+  const sessionRoleBadge = document.getElementById('session-user-role');
+  const adminLink = document.getElementById('btn-admin-dashboard-link');
+  const rawSession = localStorage.getItem('hey_drink_session');
+
+  if (rawSession) {
+    try {
+      const session = JSON.parse(rawSession);
+      if (session && session.role) {
+        if (overlay) overlay.classList.add('hidden');
+        const roleLabel = (session.role === 'admin') ? 'Vi' : 'Duyen';
+        if (sessionRoleBadge) {
+          sessionRoleBadge.textContent = roleLabel;
+        }
+        if (adminLink) {
+          adminLink.style.display = (session.role === 'admin') ? 'flex' : 'none';
+        }
+        updateBrandGreeting(session.role, session.displayName);
+        return session;
+      }
+    } catch (_) {
+      localStorage.removeItem('hey_drink_session');
+    }
+  }
+
+  // Not authenticated: display PIN screen
+  if (overlay) overlay.classList.remove('hidden');
+  if (adminLink) adminLink.style.display = 'none';
+  resetPinState();
+  return null;
+}
+
+function resetPinState() {
+  pinDigits = '';
+  updatePinDotsDisplay();
+  const errorEl = document.getElementById('pin-error');
+  if (errorEl) errorEl.textContent = '';
+  const btnNext = document.getElementById('btn-pin-submit');
+  if (btnNext) btnNext.disabled = true;
+}
+
+function updatePinDotsDisplay() {
+  const dots = document.querySelectorAll('.pin-dot');
+  dots.forEach(dot => {
+    const idx = parseInt(dot.getAttribute('data-idx'), 10);
+    if (idx < pinDigits.length) {
+      dot.classList.add('filled');
+    } else {
+      dot.classList.remove('filled');
+    }
+  });
+
+  const btnNext = document.getElementById('btn-pin-submit');
+  if (btnNext) {
+    btnNext.disabled = (pinDigits.length !== 4);
+  }
+}
+
+async function handlePinSubmit() {
+  if (pinDigits.length !== 4) return;
+
+  const btnNext = document.getElementById('btn-pin-submit');
+  const errorEl = document.getElementById('pin-error');
+  const dotsWrap = document.getElementById('pin-dots-wrap');
+
+  if (btnNext) {
+    btnNext.disabled = true;
+    btnNext.textContent = 'Đang kiểm tra...';
+  }
+  if (errorEl) errorEl.textContent = '';
+
+  let endpoint = null;
+  try {
+    if (swRegistration && swRegistration.pushManager) {
+      const sub = await swRegistration.pushManager.getSubscription();
+      if (sub) endpoint = sub.endpoint;
+    }
+  } catch (_) {}
+
+  try {
+    const res = await fetch('/api/auth/verify-pin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: pinDigits, endpoint })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      localStorage.setItem('hey_drink_session', JSON.stringify({
+        role: data.role,
+        displayName: data.displayName,
+        token: data.token,
+        loggedAt: Date.now()
+      }));
+
+      const overlay = document.getElementById('pin-lock-overlay');
+      if (overlay) overlay.classList.add('hidden');
+
+      const sessionRoleBadge = document.getElementById('session-user-role');
+      const adminLink = document.getElementById('btn-admin-dashboard-link');
+      const roleLabel = (data.role === 'admin') ? 'Vi' : 'Duyen';
+      if (sessionRoleBadge) sessionRoleBadge.textContent = roleLabel;
+      if (adminLink) {
+        adminLink.style.display = (data.role === 'admin') ? 'flex' : 'none';
+      }
+      updateBrandGreeting(data.role, data.displayName);
+
+      showToast(`Xin chào ${roleLabel}!`, 'success');
+      resetPinState();
+    } else {
+      if (errorEl) errorEl.textContent = data.error || 'Mã PIN không đúng. Vui lòng thử lại.';
+      if (dotsWrap) {
+        dotsWrap.classList.remove('shake');
+        void dotsWrap.offsetWidth;
+        dotsWrap.classList.add('shake');
+      }
+      if (navigator.vibrate) {
+        try { navigator.vibrate([60, 40, 60]); } catch (_) {}
+      }
+      setTimeout(() => {
+        resetPinState();
+        if (dotsWrap) dotsWrap.classList.remove('shake');
+      }, 450);
+    }
+  } catch (err) {
+    if (errorEl) errorEl.textContent = 'Lỗi kết nối: ' + err.message;
+    resetPinState();
+  } finally {
+    if (btnNext) btnNext.textContent = 'Tiếp';
+  }
+}
+
+function setupAuthHandlers() {
+  const keypad = document.getElementById('pin-keypad');
+  const btnNext = document.getElementById('btn-pin-submit');
+  const btnLogout = document.getElementById('btn-logout');
+
+  if (keypad) {
+    keypad.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pin-key');
+      if (!btn) return;
+
+      const num = btn.getAttribute('data-key');
+      const action = btn.getAttribute('data-action');
+      const errorEl = document.getElementById('pin-error');
+      if (errorEl) errorEl.textContent = '';
+
+      if (num !== null) {
+        if (pinDigits.length < 4) {
+          pinDigits += num;
+          updatePinDotsDisplay();
+        }
+      } else if (action === 'clear') {
+        pinDigits = '';
+        updatePinDotsDisplay();
+      } else if (action === 'backspace') {
+        pinDigits = pinDigits.slice(0, -1);
+        updatePinDotsDisplay();
+      }
+    });
+  }
+
+  if (btnNext) {
+    btnNext.addEventListener('click', handlePinSubmit);
+  }
+
+  // Keyboard navigation support
+  window.addEventListener('keydown', (e) => {
+    const overlay = document.getElementById('pin-lock-overlay');
+    if (!overlay || overlay.classList.contains('hidden')) return;
+
+    if (e.key >= '0' && e.key <= '9') {
+      if (pinDigits.length < 4) {
+        pinDigits += e.key;
+        updatePinDotsDisplay();
+        const errorEl = document.getElementById('pin-error');
+        if (errorEl) errorEl.textContent = '';
+      }
+    } else if (e.key === 'Backspace') {
+      pinDigits = pinDigits.slice(0, -1);
+      updatePinDotsDisplay();
+    } else if (e.key === 'Escape') {
+      resetPinState();
+    } else if (e.key === 'Enter') {
+      if (pinDigits.length === 4) {
+        handlePinSubmit();
+      }
+    }
+  });
+
+  // Logout handler in Settings (with debounce to prevent double-confirm on touchscreens)
+  let isLoggingOut = false;
+  if (btnLogout) {
+    btnLogout.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (isLoggingOut) return;
+      isLoggingOut = true;
+
+      const confirmed = await showCustomConfirm({
+        title: 'Đăng xuất?',
+        message: 'Bạn có muốn đăng xuất khỏi ứng dụng không?',
+        confirmText: 'Đăng xuất',
+        cancelText: 'Huỷ',
+        isDanger: false
+      });
+
+      if (confirmed) {
+        localStorage.removeItem('hey_drink_session');
+        closeSettingsModal();
+        updateBrandGreeting(null, null);
+        const overlay = document.getElementById('pin-lock-overlay');
+        if (overlay) overlay.classList.remove('hidden');
+        const adminLink = document.getElementById('btn-admin-dashboard-link');
+        if (adminLink) adminLink.style.display = 'none';
+        resetPinState();
+        showToast('Đã đăng xuất.', 'info');
+      }
+
+      setTimeout(() => {
+        isLoggingOut = false;
+      }, 500);
+    });
+  }
+}
+
+// ----------------------------------------------------
+// Custom In-App Confirmation Modal
+// ----------------------------------------------------
+function showCustomConfirm({
+  title = 'Xác nhận',
+  message = 'Bạn có chắc chắn muốn thực hiện thao tác này?',
+  confirmText = 'Đồng ý',
+  cancelText = 'Huỷ',
+  isDanger = true
+} = {}) {
+  return new Promise((resolve) => {
+    let backdrop = document.getElementById('custom-confirm-modal');
+    if (!backdrop) {
+      const div = document.createElement('div');
+      div.id = 'custom-confirm-modal';
+      div.className = 'custom-confirm-backdrop';
+      div.innerHTML = `
+        <div class="custom-confirm-card" role="dialog" aria-modal="true">
+          <div class="custom-confirm-icon-box" id="custom-confirm-icon"></div>
+          <div class="custom-confirm-title" id="custom-confirm-title"></div>
+          <div class="custom-confirm-message" id="custom-confirm-message"></div>
+          <div class="custom-confirm-actions">
+            <button type="button" class="custom-confirm-btn custom-confirm-cancel" id="custom-confirm-cancel-btn"></button>
+            <button type="button" class="custom-confirm-btn custom-confirm-ok" id="custom-confirm-ok-btn"></button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(div);
+      backdrop = div;
+    }
+
+    const iconBox = backdrop.querySelector('#custom-confirm-icon');
+    const titleEl = backdrop.querySelector('#custom-confirm-title');
+    const msgEl = backdrop.querySelector('#custom-confirm-message');
+    const cancelBtn = backdrop.querySelector('#custom-confirm-cancel-btn');
+    const okBtn = backdrop.querySelector('#custom-confirm-ok-btn');
+
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    cancelBtn.textContent = cancelText;
+    okBtn.textContent = confirmText;
+
+    if (isDanger) {
+      iconBox.className = 'custom-confirm-icon-box danger';
+      iconBox.innerHTML = `
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      `;
+      okBtn.className = 'custom-confirm-btn custom-confirm-ok danger';
+    } else {
+      iconBox.className = 'custom-confirm-icon-box';
+      iconBox.innerHTML = `
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      `;
+      okBtn.className = 'custom-confirm-btn custom-confirm-ok';
+    }
+
+    function cleanup(result) {
+      backdrop.classList.remove('open');
+      cancelBtn.removeEventListener('click', onCancel);
+      okBtn.removeEventListener('click', onOk);
+      backdrop.removeEventListener('click', onBackdrop);
+      window.removeEventListener('keydown', onKeydown);
+      resolve(result);
+    }
+
+    function onCancel(e) {
+      e.preventDefault();
+      cleanup(false);
+    }
+
+    function onOk(e) {
+      e.preventDefault();
+      cleanup(true);
+    }
+
+    function onBackdrop(e) {
+      if (e.target === backdrop) {
+        cleanup(false);
+      }
+    }
+
+    function onKeydown(e) {
+      if (e.key === 'Escape') {
+        cleanup(false);
+      }
+    }
+
+    cancelBtn.addEventListener('click', onCancel);
+    okBtn.addEventListener('click', onOk);
+    backdrop.addEventListener('click', onBackdrop);
+    window.addEventListener('keydown', onKeydown);
+
+    backdrop.classList.add('open');
+    cancelBtn.focus();
+  });
 }
 
 // ----------------------------------------------------
@@ -370,10 +746,6 @@ async function loadMedications() {
     const apiUrl = '/api/medications' + (window.location.search || '');
     const res = await fetch(apiUrl);
     const data = await res.json();
-
-    if (data.date) {
-      currentDateDisplay.textContent = `Hôm nay: ${data.date} (Hiện tại: ${data.currentTime})`;
-    }
 
     // 1. Update Hero 3-Column Metric Card (BVIS Style)
     if (data.stats) {
@@ -534,17 +906,28 @@ function renderTodayMedications(meds) {
 
   todayMedList.innerHTML = meds.map(med => {
     const isTaken = med.isTakenToday;
+    const safeName = escapeHTML(med.name);
+    const noteText = med.note ? escapeHTML(med.note) : '';
+
     return `
       <div class="med-card ${isTaken ? 'is-taken' : ''}">
         <div class="med-main">
           <div class="med-time">${med.time}</div>
-          <div class="med-name">${escapeHTML(med.name)}</div>
+          <div class="med-name">${safeName}</div>
           <div class="med-dosage">${escapeHTML(med.dosage)}</div>
+          ${noteText ? `<div style="font-size: 11px; color: #1E40AF; background: #EFF6FF; padding: 3px 8px; border-radius: 4px; margin-top: 4px; display: inline-block;">💬 "${noteText}"</div>` : ''}
         </div>
-        <div class="med-actions">
+        <div class="med-actions" style="display: flex; align-items: center; gap: 6px;">
           ${isTaken
             ? `<span class="badge-taken">Đã uống (${med.takenAt || 'xong'})</span>`
-            : `<button class="btn-take" onclick="markTaken('${med.id}')">Đánh dấu đã uống</button>`
+            : `
+              <button class="btn-take" onclick="markTaken('${med.id}')">Đã uống</button>
+              <button class="btn-take-msg" onclick="openTakeNoteModal('${med.id}', '${safeName}', '${med.time}')" title="Xác nhận kèm ghi chú">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </button>
+            `
           }
         </div>
       </div>
@@ -603,8 +986,49 @@ function renderAllMedications(meds) {
 }
 
 const inFlightActions = new Set();
+let currentNoteMedId = null;
 
-window.markTaken = async function(id) {
+window.openTakeNoteModal = function(id, name, time) {
+  currentNoteMedId = id;
+  const modal = document.getElementById('take-note-modal-backdrop');
+  const title = document.getElementById('take-note-title');
+  const input = document.getElementById('take-note-input');
+  if (title) title.textContent = `Ghi chú: ${name} (${time})`;
+  if (input) input.value = '';
+  if (modal) modal.classList.add('open');
+};
+
+window.closeTakeNoteModal = function() {
+  const modal = document.getElementById('take-note-modal-backdrop');
+  if (modal) modal.classList.remove('open');
+  currentNoteMedId = null;
+};
+
+function setupTakeNoteModal() {
+  const modal = document.getElementById('take-note-modal-backdrop');
+  const btnClose = document.getElementById('btn-close-take-note');
+  const input = document.getElementById('take-note-input');
+  const btnConfirm = document.getElementById('btn-confirm-take-with-note');
+
+  if (btnClose) btnClose.addEventListener('click', closeTakeNoteModal);
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeTakeNoteModal();
+    });
+  }
+
+  if (btnConfirm) {
+    btnConfirm.addEventListener('click', async () => {
+      if (!currentNoteMedId) return;
+      const noteText = input ? input.value.trim() : '';
+      const medId = currentNoteMedId;
+      closeTakeNoteModal();
+      await markTaken(medId, noteText);
+    });
+  }
+}
+
+window.markTaken = async function(id, note = null) {
   if (inFlightActions.has(id)) return;
   inFlightActions.add(id);
 
@@ -612,11 +1036,17 @@ window.markTaken = async function(id) {
     const res = await fetch(`/api/medications/${id}/take`, { 
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'X-Idempotency-Key': `take-${id}-${Date.now()}`
-      }
+      },
+      body: JSON.stringify({ note })
     });
     if (res.ok) {
-      showToast('Đã đánh dấu uống thuốc thành công!', 'success');
+      if (note) {
+        showToast('Đã xác nhận uống thuốc kèm ghi chú!', 'success');
+      } else {
+        showToast('Đã đánh dấu uống thuốc thành công!', 'success');
+      }
       await loadMedications();
     } else {
       showToast('Không thể cập nhật cữ thuốc. Vui lòng thử lại.', 'error');
@@ -631,7 +1061,14 @@ window.markTaken = async function(id) {
 
 window.deleteMed = async function(id) {
   if (inFlightActions.has(`del-${id}`)) return;
-  if (!confirm('Bạn có chắc muốn xóa cữ thuốc này?')) return;
+  const ok = await showCustomConfirm({
+    title: 'Xoá cữ thuốc?',
+    message: 'Bạn có chắc chắn muốn xoá cữ thuốc này không?',
+    confirmText: 'Xoá cữ',
+    cancelText: 'Huỷ',
+    isDanger: true
+  });
+  if (!ok) return;
   inFlightActions.add(`del-${id}`);
 
   try {
@@ -1260,6 +1697,7 @@ function escapeHTML(str) {
 let rtClient = null;
 let subMeds = null;
 let subLogs = null;
+let subNotes = null;
 
 async function initNeonRealtime() {
   if (typeof window.NeonRealtime === 'undefined') {
@@ -1269,7 +1707,7 @@ async function initNeonRealtime() {
   try {
     const res = await fetch('/api/realtime/sealed-queries');
     if (!res.ok) return;
-    const { url, sealedMeds, sealedLogs } = await res.json();
+    const { url, sealedMeds, sealedLogs, sealedNotes } = await res.json();
     if (!url || !sealedMeds || !sealedLogs) return;
 
     rtClient = window.NeonRealtime.createRealtimeClient({ url });
@@ -1297,8 +1735,455 @@ async function initNeonRealtime() {
         isInitLogs = false;
       }
     });
+
+    if (sealedNotes) {
+      let isInitNotes = true;
+      subNotes = rtClient.subscribe(sealedNotes);
+      subNotes.onChange(({ status, error }) => {
+        if (error) return;
+        if (status === 'live') {
+          if (!isInitNotes) {
+            const notesModal = document.getElementById('notes-modal-backdrop');
+            const isOpen = notesModal && notesModal.classList.contains('open');
+            loadNotes(isOpen);
+          }
+          isInitNotes = false;
+        }
+      });
+    }
   } catch (err) {
     console.warn('[Realtime] Live sync initialization skipped:', err.message);
+  }
+}
+
+// ----------------------------------------------------
+// Shared Notes (Saturday / Weekly Check-in Notes)
+// ----------------------------------------------------
+let cachedNotesList = [];
+let editingNoteId = null;
+
+function getCurrentUserRole() {
+  try {
+    const raw = localStorage.getItem('hey_drink_session');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.role) return parsed.role;
+    }
+  } catch (_) {}
+  return 'girlfriend';
+}
+
+function formatNoteTime(isoString) {
+  if (!isoString) return { formatted: '', isSaturday: false };
+  const d = new Date(isoString);
+  const daysOfWeek = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  const dayName = daysOfWeek[d.getDay()];
+  const isSaturday = d.getDay() === 6;
+  
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  
+  return {
+    formatted: `${dayName}, ${day}/${month} lúc ${hours}:${minutes}`,
+    isSaturday
+  };
+}
+
+function checkSaturdayBanner() {
+  const isSaturday = (new Date()).getDay() === 6;
+  const banner = document.getElementById('saturday-banner');
+  if (banner) {
+    banner.style.display = isSaturday ? 'block' : 'none';
+  }
+}
+
+function formatChatDay(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const now = new Date();
+  
+  const isToday = d.toDateString() === now.toDateString();
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+  
+  if (isToday) return 'Hôm nay';
+  if (isYesterday) return 'Hôm qua';
+
+  const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  const dayName = daysOfWeek[d.getDay()];
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dayName}, ${dd}/${mm}`;
+}
+
+function formatChatTimeOnly(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+function renderNotesList(notes, currentRole) {
+  const container = document.getElementById('notes-list-container');
+  if (!container) return;
+
+  if (!notes || notes.length === 0) {
+    container.innerHTML = `
+      <div class="chat-empty-state">
+        <div class="chat-empty-desc">Nhập gì đó...</div>
+      </div>
+    `;
+    cachedNotesList = [];
+    return;
+  }
+
+  // Sort ascending for chronological chat flow (oldest top, newest bottom)
+  const sorted = [...notes].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  cachedNotesList = sorted;
+
+  const nowMs = Date.now();
+  let lastDayStr = '';
+  let html = '';
+
+  sorted.forEach(note => {
+    const dayStr = formatChatDay(note.createdAt);
+    if (dayStr !== lastDayStr) {
+      html += `
+        <div class="chat-day-divider">
+          <span>${dayStr}</span>
+        </div>
+      `;
+      lastDayStr = dayStr;
+    }
+
+    const isMine = note.authorRole === currentRole;
+    const authorName = note.authorName || (note.authorRole === 'admin' ? 'Vi' : 'Duyen');
+    const timeOnly = formatChatTimeOnly(note.createdAt);
+    const ageMs = nowMs - new Date(note.createdAt).getTime();
+    const isWithin10Min = ageMs <= 10 * 60 * 1000;
+    const editedHtml = note.isEdited ? '<span class="chat-edited-tag"> · Đã sửa</span>' : '';
+
+    if (isMine) {
+      const readIndicator = note.readByOtherAt ? '✓✓ Đã xem' : '✓ Đã gửi';
+      const actionButtons = isWithin10Min ? `
+        <div class="chat-msg-actions">
+          <button type="button" class="chat-icon-btn btn-edit-note" data-id="${escapeHTML(note.id)}" title="Chỉnh sửa tin nhắn" aria-label="Chỉnh sửa tin nhắn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          <button type="button" class="chat-icon-btn btn-delete-note" data-id="${escapeHTML(note.id)}" title="Gỡ tin nhắn" aria-label="Gỡ tin nhắn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      ` : '';
+
+      html += `
+        <div class="chat-row chat-row-me">
+          ${actionButtons}
+          <div class="chat-bubble chat-bubble-me">
+            <div class="chat-bubble-text">${escapeHTML(note.content)}</div>
+            <div class="chat-bubble-meta">
+              <span>${timeOnly}${editedHtml}</span>
+              <span>· ${readIndicator}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      const actionButtons = (currentRole === 'admin' && isWithin10Min) ? `
+        <div class="chat-msg-actions">
+          <button type="button" class="chat-icon-btn btn-delete-note" data-id="${escapeHTML(note.id)}" title="Gỡ tin nhắn" aria-label="Gỡ tin nhắn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      ` : '';
+
+      html += `
+        <div class="chat-row chat-row-other">
+          <div class="chat-bubble chat-bubble-other">
+            <div class="chat-author-name">${escapeHTML(authorName)}</div>
+            <div class="chat-bubble-text">${escapeHTML(note.content)}</div>
+            <div class="chat-bubble-meta">
+              <span>${timeOnly}${editedHtml}</span>
+            </div>
+          </div>
+          ${actionButtons}
+        </div>
+      `;
+    }
+  });
+
+  container.innerHTML = html;
+
+  // Auto-scroll to bottom of chat
+  container.scrollTop = container.scrollHeight;
+
+  // Wire edit buttons
+  container.querySelectorAll('.btn-edit-note').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      if (id) startEditingNote(id);
+    });
+  });
+
+  // Wire delete / recall buttons
+  container.querySelectorAll('.btn-delete-note').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      if (id) deleteNote(id);
+    });
+  });
+}
+
+function startEditingNote(id) {
+  const note = cachedNotesList.find(n => n.id === id);
+  if (!note) return;
+
+  const ageMs = Date.now() - new Date(note.createdAt).getTime();
+  if (ageMs > 10 * 60 * 1000) {
+    showToast('Đã quá 10 phút, không thể chỉnh sửa tin nhắn này.', 'error');
+    return;
+  }
+
+  editingNoteId = id;
+  const ribbon = document.getElementById('chat-edit-ribbon');
+  const textarea = document.getElementById('note-input-content');
+  const btnSubmit = document.getElementById('btn-submit-note');
+
+  if (ribbon) ribbon.style.display = 'flex';
+  if (textarea) {
+    textarea.value = note.content;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
+    textarea.focus();
+  }
+  if (btnSubmit) btnSubmit.disabled = false;
+}
+
+function cancelEditingNote() {
+  editingNoteId = null;
+  const ribbon = document.getElementById('chat-edit-ribbon');
+  const textarea = document.getElementById('note-input-content');
+  const btnSubmit = document.getElementById('btn-submit-note');
+
+  if (ribbon) ribbon.style.display = 'none';
+  if (textarea) {
+    textarea.value = '';
+    textarea.style.height = 'auto';
+  }
+  if (btnSubmit) btnSubmit.disabled = true;
+}
+
+async function loadNotes(autoMarkRead = false) {
+  const role = getCurrentUserRole();
+  try {
+    const res = await fetch(`/api/notes?role=${encodeURIComponent(role)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.success) return;
+
+    const notes = data.notes || [];
+    const unreadCount = data.unreadCount || 0;
+
+    const gearDot = document.getElementById('gear-unread-dot');
+    const noteDot = document.getElementById('note-icon-dot');
+    const noteBadge = document.getElementById('note-badge-unread');
+
+    if (autoMarkRead && unreadCount > 0) {
+      if (gearDot) gearDot.style.display = 'none';
+      if (noteDot) noteDot.style.display = 'none';
+      if (noteBadge) noteBadge.style.display = 'none';
+      fetch('/api/notes/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+      }).catch(() => {});
+    } else {
+      const showUnread = unreadCount > 0;
+      if (gearDot) gearDot.style.display = showUnread ? 'block' : 'none';
+      if (noteDot) noteDot.style.display = showUnread ? 'block' : 'none';
+      if (noteBadge) noteBadge.style.display = showUnread ? 'inline-flex' : 'none';
+    }
+
+    renderNotesList(notes, role);
+  } catch (err) {
+    console.warn('[Notes] Failed to load notes:', err.message);
+  }
+}
+
+async function submitNote() {
+  const textarea = document.getElementById('note-input-content');
+  const btn = document.getElementById('btn-submit-note');
+  if (!textarea) return;
+
+  const content = textarea.value.trim();
+  if (!content) return;
+
+  const role = getCurrentUserRole();
+  if (btn) btn.disabled = true;
+
+  try {
+    if (editingNoteId) {
+      // Editing existing note within 10 minutes
+      const res = await fetch(`/api/notes/${editingNoteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, role })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('Đã cập nhật tin nhắn!', 'success');
+        cancelEditingNote();
+        await loadNotes(true);
+      } else {
+        showToast(data.error || 'Không thể chỉnh sửa tin nhắn', 'error');
+      }
+    } else {
+      // Creating new note
+      const res = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, role })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        textarea.value = '';
+        textarea.style.height = 'auto';
+        if (btn) btn.disabled = true;
+        await loadNotes(true);
+        textarea.focus();
+      } else {
+        showToast(data.error || 'Không thể gửi tin nhắn', 'error');
+      }
+    }
+  } catch (err) {
+    showToast('Lỗi kết nối khi lưu tin nhắn', 'error');
+  } finally {
+    if (btn) btn.disabled = textarea.value.trim().length === 0;
+  }
+}
+
+async function deleteNote(id) {
+  const ok = await showCustomConfirm({
+    title: 'Gỡ tin nhắn?',
+    message: 'Tin nhắn sẽ được gỡ khỏi cuộc trò chuyện của hai đứa.',
+    confirmText: 'Gỡ tin nhắn',
+    cancelText: 'Huỷ',
+    isDanger: true
+  });
+  if (!ok) return;
+
+  const role = getCurrentUserRole();
+  try {
+    const res = await fetch(`/api/notes/${id}?role=${encodeURIComponent(role)}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('Đã gỡ tin nhắn', 'info');
+      if (editingNoteId === id) cancelEditingNote();
+      await loadNotes(true);
+    } else {
+      showToast(data.error || 'Không thể gỡ tin nhắn', 'error');
+    }
+  } catch (err) {
+    showToast('Lỗi khi gỡ tin nhắn', 'error');
+  }
+}
+
+function setupNotesHandlers() {
+  const btnOpenNotes = document.getElementById('btn-open-notes');
+  const btnCloseNotes = document.getElementById('btn-close-notes');
+  const notesModal = document.getElementById('notes-modal-backdrop');
+  const textarea = document.getElementById('note-input-content');
+  const btnSubmit = document.getElementById('btn-submit-note');
+  const btnCancelEdit = document.getElementById('btn-cancel-edit');
+  const headerRole = document.getElementById('chat-header-role');
+
+  if (btnCancelEdit) {
+    btnCancelEdit.addEventListener('click', cancelEditingNote);
+  }
+
+  if (btnOpenNotes) {
+    btnOpenNotes.addEventListener('click', () => {
+      closeSettingsModal();
+      openNotesModal();
+      checkSaturdayBanner();
+      if (headerRole) {
+        const role = getCurrentUserRole();
+        headerRole.textContent = role === 'admin' ? 'Vi' : 'Duyen';
+      }
+      setTimeout(() => {
+        if (textarea) textarea.focus();
+        const container = document.getElementById('notes-list-container');
+        if (container) container.scrollTop = container.scrollHeight;
+      }, 150);
+    });
+  }
+
+  if (btnCloseNotes) {
+    btnCloseNotes.addEventListener('click', () => {
+      closeNotesModal();
+    });
+  }
+
+  const btnToggleFullscreen = document.getElementById('btn-toggle-fullscreen-notes');
+  const chatSheet = document.querySelector('.notes-chat-sheet');
+  if (btnToggleFullscreen && chatSheet) {
+    btnToggleFullscreen.addEventListener('click', () => {
+      const isFull = chatSheet.classList.toggle('fullscreen');
+      btnToggleFullscreen.title = isFull ? 'Thu nhỏ' : 'Toàn màn hình';
+      btnToggleFullscreen.setAttribute('aria-label', isFull ? 'Thu nhỏ' : 'Toàn màn hình');
+      const container = document.getElementById('notes-list-container');
+      if (container) container.scrollTop = container.scrollHeight;
+    });
+  }
+
+  if (notesModal) {
+    notesModal.addEventListener('click', (e) => {
+      if (e.target === notesModal) {
+        closeNotesModal();
+      }
+    });
+  }
+
+  if (textarea) {
+    // Auto-expand textarea as user types (especially for long messages)
+    textarea.addEventListener('input', () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
+      if (btnSubmit) btnSubmit.disabled = textarea.value.trim().length === 0;
+    });
+
+    // Enter to send (Shift + Enter for new line)
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (textarea.value.trim()) {
+          submitNote();
+        }
+      }
+    });
+  }
+
+  if (btnSubmit) {
+    btnSubmit.addEventListener('click', () => {
+      submitNote();
+    });
   }
 }
 
@@ -1306,5 +2191,8 @@ async function initNeonRealtime() {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     loadMedications();
+    const notesModal = document.getElementById('notes-modal-backdrop');
+    const isOpen = notesModal && notesModal.classList.contains('open');
+    loadNotes(isOpen);
   }
 });

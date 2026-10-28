@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Quản Trị — Hey Let's Drink</title>
   <link rel="icon" type="image/png" href="/image/logo.png">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=11">
   <style>
     .admin-header-row {
       display: flex;
@@ -137,16 +137,25 @@
             <span class="brand-title" style="font-size: 18px;">Hey Let's Drink</span>
             <span class="admin-badge">Admin</span>
           </div>
-          <div style="font-size: 12px; color: var(--text-muted);">Quản trị nhắc nhở & bạn gái</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Quản trị hệ thống nhắc nhở</div>
         </div>
       </div>
-      <a href="/" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12"></line>
-          <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-        <span>Về App</span>
-      </a>
+      <div class="header-actions">
+        <a href="/" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; text-decoration: none; min-height: 36px; display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Về App</span>
+        </a>
+        <button type="button" id="btn-admin-gear" class="btn-icon-gear" aria-label="Cài đặt quản trị" title="Cài đặt & Quản trị">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span id="admin-gear-unread-dot" class="gear-unread-dot" style="display: none;"></span>
+        </button>
+      </div>
     </header>
 
     <!-- Connection Status Strip -->
@@ -165,10 +174,10 @@
       </button>
     </div>
 
-    <!-- Section 1: Live Girlfriend Today Status -->
+    <!-- Section 1: Live Today Status -->
     <section class="device-card">
       <div class="section-header" style="margin-bottom: 4px;">
-        <span class="section-title">Tiến Độ Hôm Nay Của Bạn Gái</span>
+        <span class="section-title">Tiến Độ Uống Thuốc Hôm Nay</span>
         <span id="admin-time-label" style="font-size: 12px; color: var(--text-muted);">--:--</span>
       </div>
       <div id="admin-med-list" style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
@@ -229,28 +238,28 @@
           <label class="form-label" for="anki-msg-stage1" style="font-size: 12px; color: var(--text-body);">
             Chặng 1 (Quá 10 phút):
           </label>
-          <input type="text" id="anki-msg-stage1" class="form-input" placeholder="Quá giờ 10p rồi, em mau uống thuốc nha!">
+          <input type="text" id="anki-msg-stage1" class="form-input" placeholder="Đã quá giờ 10 phút. Vui lòng uống thuốc và xác nhận.">
         </div>
 
         <div class="form-group" style="margin-bottom: 10px;">
           <label class="form-label" for="anki-msg-stage2" style="font-size: 12px; color: var(--text-body);">
             Chặng 2 (Quá 15 phút):
           </label>
-          <input type="text" id="anki-msg-stage2" class="form-input" placeholder="Em ơi, quá 15p rồi chưa uống thuốc nè!">
+          <input type="text" id="anki-msg-stage2" class="form-input" placeholder="Đã quá giờ 15 phút. Vui lòng uống thuốc.">
         </div>
 
         <div class="form-group" style="margin-bottom: 10px;">
           <label class="form-label" for="anki-msg-stage3" style="font-size: 12px; color: var(--text-body);">
             Chặng 3 (Quá 17 phút):
           </label>
-          <input type="text" id="anki-msg-stage3" class="form-input" placeholder="Uống thuốc ngay nha em, trễ nhiều rồi đó!">
+          <input type="text" id="anki-msg-stage3" class="form-input" placeholder="Đã quá giờ 17 phút. Nhắc nhở uống thuốc lần 4.">
         </div>
 
         <div class="form-group" style="margin-bottom: 0;">
           <label class="form-label" for="anki-msg-stage4" style="font-size: 12px; color: #DC2626; font-weight: 600;">
             Khẩn cấp (Từ 18 phút - 1 lần/phút):
           </label>
-          <input type="text" id="anki-msg-stage4" class="form-input" placeholder="Khẩn cấp: Mau uống thuốc rồi bấm xác nhận cho anh!">
+          <input type="text" id="anki-msg-stage4" class="form-input" placeholder="Khẩn cấp: Cữ thuốc đã quá hạn. Vui lòng uống thuốc ngay.">
         </div>
       </div>
 
@@ -264,21 +273,15 @@
       </button>
     </section>
 
-    <!-- Section 3: Boyfriend Manual Nudge -->
+    <!-- Section 3: Manual Instant Notification -->
     <section class="device-card">
-      <div style="font-weight: 600; font-size: 15px; color: var(--text-heading); margin-bottom: 2px;">Bắn Lời Nhắc Trực Tiếp</div>
+      <div style="font-weight: 600; font-size: 15px; color: var(--text-heading); margin-bottom: 2px;">Gửi Thông Báo Tức Thì</div>
       <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
-        Gửi thông báo màn hình khóa tức thì tới điện thoại của bạn gái.
+        Gửi thông báo màn hình khóa tức thì tới thiết bị người dùng.
       </p>
 
-      <div class="form-group" style="margin-bottom: 4px;">
-        <input type="text" id="nudge-text" class="form-input" placeholder="Nhập lời nhắc riêng..." value="Anh nhắc em nè: mau uống thuốc đúng cữ nha!">
-      </div>
-
-      <div class="quick-pills-row">
-        <span class="quick-pill" data-text="Mau uống thuốc nha em!">Mau uống thuốc nha em</span>
-        <span class="quick-pill" data-text="Uống thêm nước ấm nha em!">Uống thêm nước ấm nha</span>
-        <span class="quick-pill" data-text="Em uống xong bấm xác nhận cho anh yên tâm nhé!">Bấm xác nhận cho anh yên tâm</span>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <input type="text" id="nudge-text" class="form-input" placeholder="Nhập nội dung thông báo..." value="">
       </div>
 
       <button id="btn-send-nudge" class="btn-primary">
@@ -286,9 +289,242 @@
           <line x1="22" y1="2" x2="11" y2="13"></line>
           <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
         </svg>
-        <span>Bắn Lời Nhắc Ngay Lập Tức</span>
+        <span>Gửi Thông Báo Ngay</span>
       </button>
     </section>
+  </div>
+
+  <!-- Admin Settings Bottom Sheet Modal -->
+  <div id="admin-settings-modal-backdrop" class="modal-backdrop">
+    <div class="bottom-sheet">
+      <div class="bottom-sheet-handle"></div>
+      <div class="section-header" style="margin-bottom: 14px;">
+        <span class="section-title">Cài Đặt Quản Trị</span>
+        <button type="button" id="btn-close-admin-settings" class="btn-secondary" style="padding: 4px 10px; font-size: 12px;">✕ Đóng</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- Shared Notes Entry Card -->
+        <div class="notes-entry-card" id="btn-admin-open-notes" style="background: #F8FAFC; border: 1.5px solid #BFDBFE; border-radius: 12px; padding: 14px 16px; margin-bottom: 0; cursor: pointer;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #EBF0FE; display: flex; align-items: center; justify-content: center; color: var(--sd-blue); position: relative; flex-shrink: 0;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span id="admin-note-icon-dot" class="note-unread-dot" style="display: none;"></span>
+              </div>
+              <div>
+                <div style="font-weight: 700; font-size: 15px; color: var(--text-heading); display: flex; align-items: center; gap: 6px;">
+                  Note
+                  <span id="admin-note-badge-unread" class="badge-new-note" style="display: none;">• Mới</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">
+                  Không gian riêng trao đổi, chia sẻ mỗi tuần (Thứ Bảy)
+                </p>
+              </div>
+            </div>
+            <div style="color: var(--sd-blue); font-size: 18px; font-weight: 700;">›</div>
+          </div>
+        </div>
+
+        <!-- Notification Settings -->
+        <div class="device-card" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1; padding-right: 14px;">
+              <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">
+                Thông báo trên thiết bị này
+              </div>
+              <p id="admin-device-noti-desc" style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
+                Nhận thông báo khi có lượt uống thuốc hoặc ghi chú mới.
+              </p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-admin-noti">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <button type="button" id="btn-admin-test-noti" class="btn-secondary" style="width: 100%; min-height: 38px; font-size: 13px; margin-top: 14px;">
+            Gửi thử thông báo tới thiết bị Admin
+          </button>
+        </div>
+
+        <!-- PIN Settings -->
+        <div class="device-card" style="margin-bottom: 0;">
+          <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">Quản Lý Mã PIN Bảo Mật</div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+            Tùy chỉnh mã PIN đăng nhập cho User và Admin.
+          </p>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="pin-gf-input" style="font-size: 11px;">Mã PIN User</label>
+              <input type="text" id="pin-gf-input" class="form-input" maxlength="6" inputmode="numeric" placeholder="9230">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="pin-admin-input" style="font-size: 11px;">Mã PIN Admin</label>
+              <input type="text" id="pin-admin-input" class="form-input" maxlength="6" inputmode="numeric" placeholder="7777">
+            </div>
+          </div>
+
+          <button type="button" id="btn-save-pins" class="btn-primary" style="width: 100%; min-height: 40px; font-size: 13px;">
+            Lưu Cài Đặt Mã PIN
+          </button>
+        </div>
+
+        <!-- Session & Logout -->
+        <div style="margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--border-subtle); padding-bottom: 28px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 12px; color: var(--text-muted);">Phiên đăng nhập:</span>
+            <span class="admin-badge" style="background: #EBF0FE; color: var(--sd-blue); font-size: 11px;">Admin</span>
+          </div>
+          <button type="button" id="btn-admin-logout" class="btn-secondary" style="width: 100%; min-height: 42px; color: #DC2626; border-color: #FECACA; font-weight: 600;">
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CHAT BOX NOTE (ADMIN) ================= -->
+  <div id="admin-notes-modal-backdrop" class="modal-backdrop">
+    <div class="notes-chat-sheet">
+      <!-- Chat Header -->
+      <div class="notes-chat-header">
+        <div class="bottom-sheet-handle" style="margin-bottom: 8px;"></div>
+        <div class="notes-chat-header-inner" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="chat-header-avatar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <div>
+              <div style="font-weight: 700; font-size: 16px; color: var(--text-heading); display: flex; align-items: center; gap: 6px;">
+                Note
+                <span class="chat-my-role-badge">Vi</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button type="button" id="btn-admin-toggle-fullscreen-notes" class="chat-close-btn chat-fullscreen-btn" title="Toàn màn hình" aria-label="Toàn màn hình">
+              <svg class="icon-expand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+              <svg class="icon-compress" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            </button>
+            <button type="button" id="btn-close-admin-notes" class="chat-close-btn" aria-label="Đóng">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saturday Notice Ribbon -->
+      <div id="admin-saturday-banner" class="chat-saturday-ribbon" style="display: none;">
+        Thứ Bảy — Thời điểm hai đứa cùng nhìn lại và chia sẻ tuần qua.
+      </div>
+
+      <!-- Chat Messages Scroll Area -->
+      <div id="admin-notes-list-container" class="notes-chat-messages">
+        <div class="chat-loading-state">Đang tải tin nhắn...</div>
+      </div>
+
+      <!-- Chat Input Footer Bar -->
+      <div class="notes-chat-footer">
+        <div id="admin-chat-edit-ribbon" class="chat-edit-ribbon" style="display: none;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Đang sửa tin nhắn</span>
+          </div>
+          <button type="button" id="btn-admin-cancel-edit" class="chat-edit-cancel-btn">✕ Hủy</button>
+        </div>
+        <div class="chat-composer-wrap">
+          <textarea 
+            id="admin-note-input-content" 
+            class="chat-input-textarea" 
+            placeholder="Nhập gì đó..." 
+            rows="1" 
+            maxlength="3000"></textarea>
+          <button type="button" id="btn-admin-submit-note" class="chat-send-btn" disabled aria-label="Gửi">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin PIN Lock Overlay (MoMo style / SDv26 design) -->
+  <div id="admin-pin-overlay" class="pin-lock-overlay">
+    <div class="pin-lock-container">
+      <div class="pin-lock-header">
+        <img src="/image/logo.png" alt="Logo" class="pin-app-logo">
+        <h2 class="pin-app-title">Hey Let's Drink</h2>
+        <p class="pin-app-subtitle" id="admin-pin-subtitle">Nhập mã PIN Quản trị viên để tiếp tục</p>
+      </div>
+
+      <!-- PIN Indicator Dots Box -->
+      <div class="pin-dots-container" id="admin-pin-dots-wrap">
+        <span class="pin-dot" data-idx="0"></span>
+        <span class="pin-dot" data-idx="1"></span>
+        <span class="pin-dot" data-idx="2"></span>
+        <span class="pin-dot" data-idx="3"></span>
+      </div>
+      <div id="admin-pin-error" class="pin-error-text"></div>
+
+      <!-- Custom Numeric Keypad -->
+      <div class="pin-keypad" id="admin-pin-keypad">
+        <button type="button" class="pin-key" data-key="1">1</button>
+        <button type="button" class="pin-key" data-key="2">2</button>
+        <button type="button" class="pin-key" data-key="3">3</button>
+        <button type="button" class="pin-key" data-key="4">4</button>
+        <button type="button" class="pin-key" data-key="5">5</button>
+        <button type="button" class="pin-key" data-key="6">6</button>
+        <button type="button" class="pin-key" data-key="7">7</button>
+        <button type="button" class="pin-key" data-key="8">8</button>
+        <button type="button" class="pin-key" data-key="9">9</button>
+        <button type="button" class="pin-key pin-key-fn" data-action="clear">C</button>
+        <button type="button" class="pin-key" data-key="0">0</button>
+        <button type="button" class="pin-key pin-key-fn" data-action="backspace" aria-label="Xóa">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+            <line x1="18" y1="9" x2="12" y2="15"></line>
+            <line x1="12" y1="9" x2="18" y2="15"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Primary Action Button "Tiếp" -->
+      <button type="button" id="btn-admin-pin-submit" class="btn-primary pin-btn-next" disabled>
+        Tiếp
+      </button>
+
+      <div style="margin-top: 14px; text-align: center;">
+        <a href="/" style="font-size: 13px; color: var(--sd-blue); text-decoration: none; font-weight: 500;">← Quay lại ứng dụng chính</a>
+      </div>
+    </div>
   </div>
 
   <!-- Toast Notification Container -->
@@ -313,11 +549,29 @@
     const quickPills = document.querySelectorAll('.quick-pill');
     const toast = document.getElementById('toast');
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadAdminStatus();
-      setupHandlers();
-      initAdminRealtime();
-    });
+    // PIN Management Elements
+    const pinGfInput = document.getElementById('pin-gf-input');
+    const pinAdminInput = document.getElementById('pin-admin-input');
+    const btnSavePins = document.getElementById('btn-save-pins');
+
+    // Admin Push Elements
+    const adminDeviceNotiDesc = document.getElementById('admin-device-noti-desc');
+    const toggleAdminNoti = document.getElementById('toggle-admin-noti');
+    const btnAdminTestNoti = document.getElementById('btn-admin-test-noti');
+    const btnAdminLogout = document.getElementById('btn-admin-logout');
+
+    let adminPinDigits = '';
+    let adminSwReg = null;
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -325,6 +579,419 @@
       setTimeout(() => {
         toast.classList.remove('show');
       }, 3000);
+    }
+
+    // Custom In-App Confirmation Modal
+    function showCustomConfirm({
+      title = 'Xác nhận',
+      message = 'Bạn có chắc chắn muốn thực hiện thao tác này?',
+      confirmText = 'Đồng ý',
+      cancelText = 'Huỷ',
+      isDanger = true
+    } = {}) {
+      return new Promise((resolve) => {
+        let backdrop = document.getElementById('custom-confirm-modal');
+        if (!backdrop) {
+          const div = document.createElement('div');
+          div.id = 'custom-confirm-modal';
+          div.className = 'custom-confirm-backdrop';
+          div.innerHTML = `
+            <div class="custom-confirm-card" role="dialog" aria-modal="true">
+              <div class="custom-confirm-icon-box" id="custom-confirm-icon"></div>
+              <div class="custom-confirm-title" id="custom-confirm-title"></div>
+              <div class="custom-confirm-message" id="custom-confirm-message"></div>
+              <div class="custom-confirm-actions">
+                <button type="button" class="custom-confirm-btn custom-confirm-cancel" id="custom-confirm-cancel-btn"></button>
+                <button type="button" class="custom-confirm-btn custom-confirm-ok" id="custom-confirm-ok-btn"></button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(div);
+          backdrop = div;
+        }
+
+        const iconBox = backdrop.querySelector('#custom-confirm-icon');
+        const titleEl = backdrop.querySelector('#custom-confirm-title');
+        const msgEl = backdrop.querySelector('#custom-confirm-message');
+        const cancelBtn = backdrop.querySelector('#custom-confirm-cancel-btn');
+        const okBtn = backdrop.querySelector('#custom-confirm-ok-btn');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        cancelBtn.textContent = cancelText;
+        okBtn.textContent = confirmText;
+
+        if (isDanger) {
+          iconBox.className = 'custom-confirm-icon-box danger';
+          iconBox.innerHTML = `
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          `;
+          okBtn.className = 'custom-confirm-btn custom-confirm-ok danger';
+        } else {
+          iconBox.className = 'custom-confirm-icon-box';
+          iconBox.innerHTML = `
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          `;
+          okBtn.className = 'custom-confirm-btn custom-confirm-ok';
+        }
+
+        function cleanup(result) {
+          backdrop.classList.remove('open');
+          cancelBtn.removeEventListener('click', onCancel);
+          okBtn.removeEventListener('click', onOk);
+          backdrop.removeEventListener('click', onBackdrop);
+          window.removeEventListener('keydown', onKeydown);
+          resolve(result);
+        }
+
+        function onCancel(e) {
+          e.preventDefault();
+          cleanup(false);
+        }
+
+        function onOk(e) {
+          e.preventDefault();
+          cleanup(true);
+        }
+
+        function onBackdrop(e) {
+          if (e.target === backdrop) {
+            cleanup(false);
+          }
+        }
+
+        function onKeydown(e) {
+          if (e.key === 'Escape') {
+            cleanup(false);
+          }
+        }
+
+        cancelBtn.addEventListener('click', onCancel);
+        okBtn.addEventListener('click', onOk);
+        backdrop.addEventListener('click', onBackdrop);
+        window.addEventListener('keydown', onKeydown);
+
+        backdrop.classList.add('open');
+        cancelBtn.focus();
+      });
+    }
+
+    // Auth & Session Check
+    function checkAdminSession() {
+      const overlay = document.getElementById('admin-pin-overlay');
+      const subtitle = document.getElementById('admin-pin-subtitle');
+      const rawSession = localStorage.getItem('hey_drink_session');
+
+      if (rawSession) {
+        try {
+          const session = JSON.parse(rawSession);
+          if (session && session.role === 'admin') {
+            if (overlay) overlay.classList.add('hidden');
+            return true;
+          } else if (session && session.role === 'girlfriend') {
+            if (overlay) overlay.classList.remove('hidden');
+            if (subtitle) subtitle.textContent = 'Tài khoản hiện tại không có quyền quản trị. Nhập mã PIN Admin để tiếp tục.';
+            return false;
+          }
+        } catch (_) {
+          localStorage.removeItem('hey_drink_session');
+        }
+      }
+
+      if (overlay) overlay.classList.remove('hidden');
+      return false;
+    }
+
+    function resetAdminPinState() {
+      adminPinDigits = '';
+      updateAdminPinDotsDisplay();
+      const errorEl = document.getElementById('admin-pin-error');
+      if (errorEl) errorEl.textContent = '';
+      const btnNext = document.getElementById('btn-admin-pin-submit');
+      if (btnNext) btnNext.disabled = true;
+    }
+
+    function updateAdminPinDotsDisplay() {
+      const dots = document.querySelectorAll('#admin-pin-dots-wrap .pin-dot');
+      dots.forEach(dot => {
+        const idx = parseInt(dot.getAttribute('data-idx'), 10);
+        if (idx < adminPinDigits.length) {
+          dot.classList.add('filled');
+        } else {
+          dot.classList.remove('filled');
+        }
+      });
+
+      const btnNext = document.getElementById('btn-admin-pin-submit');
+      if (btnNext) {
+        btnNext.disabled = (adminPinDigits.length !== 4);
+      }
+    }
+
+    async function handleAdminPinSubmit() {
+      if (adminPinDigits.length !== 4) return;
+
+      const btnNext = document.getElementById('btn-admin-pin-submit');
+      const errorEl = document.getElementById('admin-pin-error');
+      const dotsWrap = document.getElementById('admin-pin-dots-wrap');
+
+      if (btnNext) {
+        btnNext.disabled = true;
+        btnNext.textContent = 'Đang kiểm tra...';
+      }
+      if (errorEl) errorEl.textContent = '';
+
+      let endpoint = null;
+      try {
+        if (adminSwReg && adminSwReg.pushManager) {
+          const sub = await adminSwReg.pushManager.getSubscription();
+          if (sub) endpoint = sub.endpoint;
+        }
+      } catch (_) {}
+
+      try {
+        const res = await fetch('/api/auth/verify-pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: adminPinDigits, endpoint })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (data.role !== 'admin') {
+            if (errorEl) errorEl.textContent = 'Mã PIN không có quyền truy cập trang quản trị.';
+            if (dotsWrap) {
+              dotsWrap.classList.remove('shake');
+              void dotsWrap.offsetWidth;
+              dotsWrap.classList.add('shake');
+            }
+            setTimeout(() => {
+              resetAdminPinState();
+              if (dotsWrap) dotsWrap.classList.remove('shake');
+            }, 450);
+            return;
+          }
+
+          localStorage.setItem('hey_drink_session', JSON.stringify({
+            role: data.role,
+            displayName: data.displayName,
+            token: data.token,
+            loggedAt: Date.now()
+          }));
+
+          const overlay = document.getElementById('admin-pin-overlay');
+          if (overlay) overlay.classList.add('hidden');
+
+          showToast(`Xin chào ${data.displayName}!`);
+          resetAdminPinState();
+          loadAdminStatus();
+          loadPinsConfig();
+          checkAdminPushStatus();
+        } else {
+          if (errorEl) errorEl.textContent = data.error || 'Mã PIN không đúng. Vui lòng thử lại.';
+          if (dotsWrap) {
+            dotsWrap.classList.remove('shake');
+            void dotsWrap.offsetWidth;
+            dotsWrap.classList.add('shake');
+          }
+          setTimeout(() => {
+            resetAdminPinState();
+            if (dotsWrap) dotsWrap.classList.remove('shake');
+          }, 450);
+        }
+      } catch (err) {
+        if (errorEl) errorEl.textContent = 'Lỗi kết nối: ' + err.message;
+        resetAdminPinState();
+      } finally {
+        if (btnNext) btnNext.textContent = 'Tiếp';
+      }
+    }
+
+    function setupAdminKeypad() {
+      const keypad = document.getElementById('admin-pin-keypad');
+      const btnNext = document.getElementById('btn-admin-pin-submit');
+
+      if (keypad) {
+        keypad.addEventListener('click', (e) => {
+          const btn = e.target.closest('.pin-key');
+          if (!btn) return;
+
+          const num = btn.getAttribute('data-key');
+          const action = btn.getAttribute('data-action');
+          const errorEl = document.getElementById('admin-pin-error');
+          if (errorEl) errorEl.textContent = '';
+
+          if (num !== null) {
+            if (adminPinDigits.length < 4) {
+              adminPinDigits += num;
+              updateAdminPinDotsDisplay();
+            }
+          } else if (action === 'clear') {
+            adminPinDigits = '';
+            updateAdminPinDotsDisplay();
+          } else if (action === 'backspace') {
+            adminPinDigits = adminPinDigits.slice(0, -1);
+            updateAdminPinDotsDisplay();
+          }
+        });
+      }
+
+      if (btnNext) {
+        btnNext.addEventListener('click', handleAdminPinSubmit);
+      }
+
+      window.addEventListener('keydown', (e) => {
+        const overlay = document.getElementById('admin-pin-overlay');
+        if (!overlay || overlay.classList.contains('hidden')) return;
+
+        if (e.key >= '0' && e.key <= '9') {
+          if (adminPinDigits.length < 4) {
+            adminPinDigits += e.key;
+            updateAdminPinDotsDisplay();
+            const errorEl = document.getElementById('admin-pin-error');
+            if (errorEl) errorEl.textContent = '';
+          }
+        } else if (e.key === 'Backspace') {
+          adminPinDigits = adminPinDigits.slice(0, -1);
+          updateAdminPinDotsDisplay();
+        } else if (e.key === 'Escape') {
+          resetAdminPinState();
+        } else if (e.key === 'Enter') {
+          if (adminPinDigits.length === 4) {
+            handleAdminPinSubmit();
+          }
+        }
+      });
+    }
+
+    async function loadPinsConfig() {
+      try {
+        const res = await fetch('/api/admin/pins');
+        if (res.ok) {
+          const pins = await res.json();
+          if (pinGfInput) pinGfInput.value = pins.girlfriendPin || '';
+          if (pinAdminInput) pinAdminInput.value = pins.adminPin || '';
+        }
+      } catch (e) {
+        console.warn('Error loading PINs config:', e);
+      }
+    }
+
+    // Helper: Convert Base64 URL to Uint8Array for VAPID key
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
+    }
+
+    async function initAdminServiceWorker() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      try {
+        adminSwReg = await navigator.serviceWorker.register('/sw.js');
+        await checkAdminPushStatus();
+      } catch (err) {
+        console.warn('Admin SW error:', err);
+      }
+    }
+
+    async function checkAdminPushStatus() {
+      if (!adminSwReg) return;
+      try {
+        const sub = await adminSwReg.pushManager.getSubscription();
+        if (sub && Notification.permission === 'granted') {
+          let isEnabled = true;
+          try {
+            const res = await fetch(`/api/subscription/status?endpoint=${encodeURIComponent(sub.endpoint)}`);
+            if (res.ok) {
+              const data = await res.json();
+              isEnabled = data.enabled !== false;
+            }
+          } catch (_) {}
+
+          if (toggleAdminNoti) {
+            toggleAdminNoti.checked = isEnabled;
+            toggleAdminNoti.disabled = false;
+          }
+
+          if (isEnabled) {
+            adminDeviceNotiDesc.textContent = 'Đang nhận thông báo khi có lượt uống thuốc hoặc ghi chú mới.';
+          } else {
+            adminDeviceNotiDesc.textContent = 'Đã tạm tắt nhận thông báo trên thiết bị này.';
+          }
+
+          // Ensure subscription role is admin
+          await fetch('/api/auth/verify-pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin: '7777', endpoint: sub.endpoint })
+          }).catch(() => {});
+        } else {
+          if (toggleAdminNoti) {
+            toggleAdminNoti.checked = false;
+          }
+          adminDeviceNotiDesc.textContent = 'Gạt để bật thông báo trên thiết bị này.';
+        }
+      } catch (err) {
+        console.warn('Check push error:', err);
+      }
+    }
+
+    async function enableAdminPush() {
+      if (!adminSwReg) {
+        showToast('Trình duyệt không hỗ trợ Push Notifications');
+        if (toggleAdminNoti) toggleAdminNoti.checked = false;
+        return;
+      }
+      try {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+          showToast('Bạn đã từ chối quyền thông báo trên trình duyệt');
+          if (toggleAdminNoti) toggleAdminNoti.checked = false;
+          return;
+        }
+
+        const vKeyRes = await fetch('/api/vapid-key');
+        const { publicKey } = await vKeyRes.json();
+        const convertedVapidKey = urlBase64ToUint8Array(publicKey);
+
+        const subscription = await adminSwReg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedVapidKey
+        });
+
+        await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(subscription)
+        });
+
+        // Set role to admin
+        await fetch('/api/auth/verify-pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: '7777', endpoint: subscription.endpoint })
+        });
+
+        showToast('Đã bật thông báo Admin thành công!');
+        await checkAdminPushStatus();
+      } catch (err) {
+        showToast('Lỗi bật thông báo: ' + err.message);
+        if (toggleAdminNoti) toggleAdminNoti.checked = false;
+      }
     }
 
     async function loadAdminStatus() {
@@ -340,10 +1007,10 @@
         const count = data.totalDevices || 0;
         if (count > 0) {
           connDot.style.backgroundColor = '#10B981';
-          connText.textContent = `Đã kết nối ${count} thiết bị bạn gái`;
+          connText.textContent = `Đã kết nối ${count} thiết bị`;
         } else {
           connDot.style.backgroundColor = '#F59E0B';
-          connText.textContent = 'Chưa có thiết bị kết nối (bạn gái cần bật thông báo)';
+          connText.textContent = 'Chưa có thiết bị kết nối';
         }
 
         // Render Anki settings
@@ -372,11 +1039,16 @@
             badgeHtml = `<span class="status-badge pending">${m.urgencyState}</span>`;
           }
 
+          const noteHtml = m.note 
+            ? `<div style="font-size: 12px; color: #1E40AF; background: #EFF6FF; padding: 4px 8px; border-radius: 4px; margin-top: 4px; display: inline-block;">💬 "${escapeHTML(m.note)}"</div>` 
+            : '';
+
           return `
             <div style="background: var(--surface-subtle); padding: 10px 12px; border-radius: var(--radius-xs); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
               <div>
-                <strong style="font-size: 14px; color: var(--text-heading);">${m.time}</strong> — <span style="font-size: 13px;">${m.name}</span>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${m.dosage}</div>
+                <strong style="font-size: 14px; color: var(--text-heading);">${m.time}</strong> — <span style="font-size: 13px;">${escapeHTML(m.name)}</span>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${escapeHTML(m.dosage)}</div>
+                ${noteHtml}
               </div>
               <div style="text-align: right;">${badgeHtml}</div>
             </div>
@@ -441,7 +1113,7 @@
           });
           const result = await res.json();
           if (result.success) {
-            showToast(`Đã bắn lời nhắc tới thiết bị bạn gái!`);
+            showToast(`Đã gửi thông báo thành công!`);
           } else {
             showToast('Không gửi được: ' + (result.error || 'Kiểm tra lại kết nối'));
           }
@@ -451,6 +1123,574 @@
           btnSendNudge.disabled = false;
         }
       });
+
+      // Save PINs
+      btnSavePins.addEventListener('click', async () => {
+        const gfPin = pinGfInput.value.trim();
+        const adminPin = pinAdminInput.value.trim();
+
+        if (!gfPin || !adminPin) {
+          showToast('Vui lòng nhập đầy đủ cả 2 mã PIN');
+          return;
+        }
+
+        btnSavePins.disabled = true;
+        try {
+          const res = await fetch('/api/admin/update-pins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ girlfriendPin: gfPin, adminPin: adminPin })
+          });
+          if (res.ok) {
+            showToast('Đã cập nhật mã PIN thành công!');
+          } else {
+            const err = await res.json();
+            showToast('Lỗi: ' + (err.error || 'Không thể lưu PIN'));
+          }
+        } catch (e) {
+          showToast('Lỗi mạng: ' + e.message);
+        } finally {
+          btnSavePins.disabled = false;
+        }
+      });
+
+      // Toggle Admin Push
+      if (toggleAdminNoti) {
+        toggleAdminNoti.addEventListener('change', async (e) => {
+          const isChecked = e.target.checked;
+          if (!adminSwReg) {
+            showToast('Service Worker chưa sẵn sàng.');
+            e.target.checked = !isChecked;
+            return;
+          }
+
+          try {
+            const sub = await adminSwReg.pushManager.getSubscription();
+            if (!sub || Notification.permission !== 'granted') {
+              if (isChecked) {
+                await enableAdminPush();
+              } else {
+                e.target.checked = false;
+              }
+              return;
+            }
+
+            // Update existing subscription enabled status
+            const res = await fetch('/api/subscription/toggle', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ endpoint: sub.endpoint, enabled: isChecked })
+            });
+
+            if (res.ok) {
+              if (isChecked) {
+                showToast('Đã bật nhận thông báo Admin trên thiết bị này');
+                adminDeviceNotiDesc.textContent = 'Đang nhận thông báo khi có lượt uống thuốc hoặc ghi chú mới.';
+              } else {
+                showToast('Đã tạm tắt thông báo trên thiết bị này');
+                adminDeviceNotiDesc.textContent = 'Đã tạm tắt nhận thông báo trên thiết bị này.';
+              }
+            } else {
+              e.target.checked = !isChecked;
+              showToast('Không thể cập nhật trạng thái thông báo');
+            }
+          } catch (err) {
+            e.target.checked = !isChecked;
+            showToast('Lỗi: ' + err.message);
+          }
+        });
+      }
+
+      // Test Admin Push
+      btnAdminTestNoti.addEventListener('click', async () => {
+        btnAdminTestNoti.disabled = true;
+        try {
+          const res = await fetch('/api/test-push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              target: 'admin',
+              title: 'Thử nghiệm thông báo Admin',
+              body: 'Kênh thông báo Admin đang hoạt động tốt!'
+            })
+          });
+          const r = await res.json();
+          if (res.ok) {
+            showToast(`Đã gửi thử thông báo (Đến ${r.details?.sent || 0} thiết bị)`);
+          } else {
+            showToast('Không thể gửi thử: ' + (r.error || 'Lỗi không xác định'));
+          }
+        } catch (e) {
+          showToast('Lỗi gửi thử: ' + e.message);
+        } finally {
+          btnAdminTestNoti.disabled = false;
+        }
+      });
+
+      // Admin Settings Modal Handlers
+      const btnAdminGear = document.getElementById('btn-admin-gear');
+      const btnCloseAdminSettings = document.getElementById('btn-close-admin-settings');
+      const adminSettingsModal = document.getElementById('admin-settings-modal-backdrop');
+
+      function openAdminSettings() {
+        if (adminSettingsModal) {
+          adminSettingsModal.classList.add('open');
+          checkAdminPushStatus();
+          loadPinsConfig();
+        }
+      }
+
+      function closeAdminSettings() {
+        if (adminSettingsModal) {
+          adminSettingsModal.classList.remove('open');
+        }
+      }
+
+      function openAdminNotes() {
+        const modal = document.getElementById('admin-notes-modal-backdrop');
+        if (modal) {
+          modal.classList.add('open');
+          const isSat = (new Date()).getDay() === 6;
+          const banner = document.getElementById('admin-saturday-banner');
+          if (banner) banner.style.display = isSat ? 'block' : 'none';
+          loadAdminNotes(true);
+          setTimeout(() => {
+            const textarea = document.getElementById('admin-note-input-content');
+            if (textarea) textarea.focus();
+            const container = document.getElementById('admin-notes-list-container');
+            if (container) container.scrollTop = container.scrollHeight;
+          }, 150);
+        }
+      }
+
+      function closeAdminNotes() {
+        const modal = document.getElementById('admin-notes-modal-backdrop');
+        if (modal) {
+          modal.classList.remove('open');
+        }
+      }
+
+      let adminEditingNoteId = null;
+      let adminCachedNotesList = [];
+
+      function startAdminEditingNote(id) {
+        const note = adminCachedNotesList.find(n => n.id === id);
+        if (!note) return;
+
+        const ageMs = Date.now() - new Date(note.createdAt).getTime();
+        if (ageMs > 10 * 60 * 1000) {
+          showToast('Đã quá 10 phút, không thể chỉnh sửa tin nhắn này.');
+          return;
+        }
+
+        adminEditingNoteId = id;
+        const ribbon = document.getElementById('admin-chat-edit-ribbon');
+        const textarea = document.getElementById('admin-note-input-content');
+        const btnSubmit = document.getElementById('btn-admin-submit-note');
+
+        if (ribbon) ribbon.style.display = 'flex';
+        if (textarea) {
+          textarea.value = note.content;
+          textarea.style.height = 'auto';
+          textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
+          textarea.focus();
+        }
+        if (btnSubmit) btnSubmit.disabled = false;
+      }
+
+      function cancelAdminEditingNote() {
+        adminEditingNoteId = null;
+        const ribbon = document.getElementById('admin-chat-edit-ribbon');
+        const textarea = document.getElementById('admin-note-input-content');
+        const btnSubmit = document.getElementById('btn-admin-submit-note');
+
+        if (ribbon) ribbon.style.display = 'none';
+        if (textarea) {
+          textarea.value = '';
+          textarea.style.height = 'auto';
+        }
+        if (btnSubmit) btnSubmit.disabled = true;
+      }
+
+      const btnAdminOpenNotes = document.getElementById('btn-admin-open-notes');
+      const btnCloseAdminNotes = document.getElementById('btn-close-admin-notes');
+      const adminNotesModal = document.getElementById('admin-notes-modal-backdrop');
+      const adminNoteTextarea = document.getElementById('admin-note-input-content');
+      const btnAdminSubmitNote = document.getElementById('btn-admin-submit-note');
+      const btnAdminCancelEdit = document.getElementById('btn-admin-cancel-edit');
+
+      if (btnAdminCancelEdit) {
+        btnAdminCancelEdit.addEventListener('click', cancelAdminEditingNote);
+      }
+
+      if (btnAdminOpenNotes) {
+        btnAdminOpenNotes.addEventListener('click', () => {
+          closeAdminSettings();
+          openAdminNotes();
+        });
+      }
+
+      if (btnCloseAdminNotes) {
+        btnCloseAdminNotes.addEventListener('click', closeAdminNotes);
+      }
+
+      const btnAdminToggleFullscreen = document.getElementById('btn-admin-toggle-fullscreen-notes');
+      const adminChatSheet = adminNotesModal ? adminNotesModal.querySelector('.notes-chat-sheet') : null;
+      if (btnAdminToggleFullscreen && adminChatSheet) {
+        btnAdminToggleFullscreen.addEventListener('click', () => {
+          const isFull = adminChatSheet.classList.toggle('fullscreen');
+          btnAdminToggleFullscreen.title = isFull ? 'Thu nhỏ' : 'Toàn màn hình';
+          btnAdminToggleFullscreen.setAttribute('aria-label', isFull ? 'Thu nhỏ' : 'Toàn màn hình');
+          const container = document.getElementById('admin-notes-list-container');
+          if (container) container.scrollTop = container.scrollHeight;
+        });
+      }
+
+      if (adminNotesModal) {
+        adminNotesModal.addEventListener('click', (e) => {
+          if (e.target === adminNotesModal) closeAdminNotes();
+        });
+      }
+
+      if (adminNoteTextarea) {
+        // Auto-expand textarea for long messages
+        adminNoteTextarea.addEventListener('input', () => {
+          adminNoteTextarea.style.height = 'auto';
+          adminNoteTextarea.style.height = Math.min(adminNoteTextarea.scrollHeight, 140) + 'px';
+          if (btnAdminSubmitNote) btnAdminSubmitNote.disabled = adminNoteTextarea.value.trim().length === 0;
+        });
+
+        // Enter to send (Shift + Enter for new line)
+        adminNoteTextarea.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (adminNoteTextarea.value.trim()) {
+              submitAdminNote();
+            }
+          }
+        });
+      }
+
+      if (btnAdminSubmitNote) {
+        btnAdminSubmitNote.addEventListener('click', submitAdminNote);
+      }
+
+      if (btnAdminGear) btnAdminGear.addEventListener('click', openAdminSettings);
+      if (btnCloseAdminSettings) btnCloseAdminSettings.addEventListener('click', closeAdminSettings);
+      if (adminSettingsModal) {
+        adminSettingsModal.addEventListener('click', (e) => {
+          if (e.target === adminSettingsModal) closeAdminSettings();
+        });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeAdminSettings();
+          closeAdminNotes();
+        }
+      });
+
+      // Admin Logout (with debounce to prevent double confirm)
+      let isAdminLoggingOut = false;
+      if (btnAdminLogout) {
+        btnAdminLogout.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (isAdminLoggingOut) return;
+          isAdminLoggingOut = true;
+
+          const confirmed = await showCustomConfirm({
+            title: 'Đăng xuất?',
+            message: 'Bạn có muốn đăng xuất khỏi trang quản trị không?',
+            confirmText: 'Đăng xuất',
+            cancelText: 'Huỷ',
+            isDanger: false
+          });
+
+          if (confirmed) {
+            localStorage.removeItem('hey_drink_session');
+            closeAdminSettings();
+            const overlay = document.getElementById('admin-pin-overlay');
+            if (overlay) overlay.classList.remove('hidden');
+            resetAdminPinState();
+            showToast('Đã đăng xuất.');
+          }
+
+          setTimeout(() => {
+            isAdminLoggingOut = false;
+          }, 500);
+        });
+      }
+    }
+
+    // Helper: Escape HTML
+    function escapeHTML(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function formatAdminChatDay(isoString) {
+      if (!isoString) return '';
+      const d = new Date(isoString);
+      const now = new Date();
+      
+      const isToday = d.toDateString() === now.toDateString();
+      const yesterday = new Date();
+      yesterday.setDate(now.getDate() - 1);
+      const isYesterday = d.toDateString() === yesterday.toDateString();
+      
+      if (isToday) return 'Hôm nay';
+      if (isYesterday) return 'Hôm qua';
+
+      const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      const dayName = daysOfWeek[d.getDay()];
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      return `${dayName}, ${dd}/${mm}`;
+    }
+
+    function formatAdminChatTimeOnly(isoString) {
+      if (!isoString) return '';
+      const d = new Date(isoString);
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+
+    function renderAdminNotesList(notes) {
+      const container = document.getElementById('admin-notes-list-container');
+      if (!container) return;
+
+      if (!notes || notes.length === 0) {
+        container.innerHTML = `
+          <div class="chat-empty-state">
+            <div class="chat-empty-desc">Nhập gì đó...</div>
+          </div>
+        `;
+        adminCachedNotesList = [];
+        return;
+      }
+
+      // Sort chronological
+      const sorted = [...notes].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      adminCachedNotesList = sorted;
+
+      const nowMs = Date.now();
+      let lastDayStr = '';
+      let html = '';
+
+      sorted.forEach(note => {
+        const dayStr = formatAdminChatDay(note.createdAt);
+        if (dayStr !== lastDayStr) {
+          html += `
+            <div class="chat-day-divider">
+              <span>${dayStr}</span>
+            </div>
+          `;
+          lastDayStr = dayStr;
+        }
+
+        const isMine = note.authorRole === 'admin';
+        const authorName = note.authorName || (note.authorRole === 'admin' ? 'Vi' : 'Duyen');
+        const timeOnly = formatAdminChatTimeOnly(note.createdAt);
+        const ageMs = nowMs - new Date(note.createdAt).getTime();
+        const isWithin10Min = ageMs <= 10 * 60 * 1000;
+        const editedHtml = note.isEdited ? '<span class="chat-edited-tag"> · Đã sửa</span>' : '';
+
+        if (isMine) {
+          const readIndicator = note.readByOtherAt ? '✓✓ Đã xem' : '✓ Đã gửi';
+          const actionButtons = isWithin10Min ? `
+            <div class="chat-msg-actions">
+              <button type="button" class="chat-icon-btn btn-admin-edit-note" data-id="${escapeHTML(note.id)}" title="Chỉnh sửa tin nhắn" aria-label="Chỉnh sửa tin nhắn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
+              <button type="button" class="chat-icon-btn btn-admin-delete-note" data-id="${escapeHTML(note.id)}" title="Gỡ tin nhắn" aria-label="Gỡ tin nhắn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          ` : '';
+
+          html += `
+            <div class="chat-row chat-row-me">
+              ${actionButtons}
+              <div class="chat-bubble chat-bubble-me">
+                <div class="chat-bubble-text">${escapeHTML(note.content)}</div>
+                <div class="chat-bubble-meta">
+                  <span>${timeOnly}${editedHtml}</span>
+                  <span>· ${readIndicator}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          const actionButtons = isWithin10Min ? `
+            <div class="chat-msg-actions">
+              <button type="button" class="chat-icon-btn btn-admin-delete-note" data-id="${escapeHTML(note.id)}" title="Gỡ tin nhắn" aria-label="Gỡ tin nhắn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          ` : '';
+
+          html += `
+            <div class="chat-row chat-row-other">
+              <div class="chat-bubble chat-bubble-other">
+                <div class="chat-author-name">${escapeHTML(authorName)}</div>
+                <div class="chat-bubble-text">${escapeHTML(note.content)}</div>
+                <div class="chat-bubble-meta">
+                  <span>${timeOnly}${editedHtml}</span>
+                </div>
+              </div>
+              ${actionButtons}
+            </div>
+          `;
+        }
+      });
+
+      container.innerHTML = html;
+      container.scrollTop = container.scrollHeight;
+
+      // Wire edit buttons
+      container.querySelectorAll('.btn-admin-edit-note').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-id');
+          if (id) startAdminEditingNote(id);
+        });
+      });
+
+      // Wire delete buttons
+      container.querySelectorAll('.btn-admin-delete-note').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-id');
+          if (id) deleteAdminNote(id);
+        });
+      });
+    }
+
+    async function loadAdminNotes(autoMarkRead = false) {
+      try {
+        const res = await fetch('/api/notes?role=admin');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.success) return;
+
+        const notes = data.notes || [];
+        const unreadCount = data.unreadCount || 0;
+
+        const gearDot = document.getElementById('admin-gear-unread-dot');
+        const noteDot = document.getElementById('admin-note-icon-dot');
+        const noteBadge = document.getElementById('admin-note-badge-unread');
+
+        if (autoMarkRead && unreadCount > 0) {
+          if (gearDot) gearDot.style.display = 'none';
+          if (noteDot) noteDot.style.display = 'none';
+          if (noteBadge) noteBadge.style.display = 'none';
+          fetch('/api/notes/mark-read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'admin' })
+          }).catch(() => {});
+        } else {
+          const showUnread = unreadCount > 0;
+          if (gearDot) gearDot.style.display = showUnread ? 'block' : 'none';
+          if (noteDot) noteDot.style.display = showUnread ? 'block' : 'none';
+          if (noteBadge) noteBadge.style.display = showUnread ? 'inline-flex' : 'none';
+        }
+
+        renderAdminNotesList(notes);
+      } catch (err) {
+        console.warn('[Admin Notes] Failed to load notes:', err.message);
+      }
+    }
+
+    async function submitAdminNote() {
+      const textarea = document.getElementById('admin-note-input-content');
+      const btn = document.getElementById('btn-admin-submit-note');
+      if (!textarea) return;
+
+      const content = textarea.value.trim();
+      if (!content) return;
+
+      if (btn) btn.disabled = true;
+
+      try {
+        if (adminEditingNoteId) {
+          const res = await fetch(`/api/notes/${adminEditingNoteId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, role: 'admin' })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast('Đã sửa tin nhắn!');
+            cancelAdminEditingNote();
+            await loadAdminNotes(true);
+          } else {
+            showToast(data.error || 'Không thể sửa tin nhắn');
+          }
+        } else {
+          const res = await fetch('/api/notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, role: 'admin' })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            textarea.value = '';
+            textarea.style.height = 'auto';
+            if (btn) btn.disabled = true;
+            await loadAdminNotes(true);
+            textarea.focus();
+          } else {
+            showToast(data.error || 'Không thể gửi tin nhắn');
+          }
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối khi lưu tin nhắn');
+      } finally {
+        if (btn) btn.disabled = textarea.value.trim().length === 0;
+      }
+    }
+
+    async function deleteAdminNote(id) {
+      const ok = await showCustomConfirm({
+        title: 'Gỡ tin nhắn?',
+        message: 'Tin nhắn sẽ được gỡ khỏi cuộc trò chuyện của hai đứa.',
+        confirmText: 'Gỡ tin nhắn',
+        cancelText: 'Huỷ',
+        isDanger: true
+      });
+      if (!ok) return;
+
+      try {
+        const res = await fetch(`/api/notes/${id}?role=admin`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast('Đã gỡ tin nhắn');
+          if (adminEditingNoteId === id) cancelAdminEditingNote();
+          await loadAdminNotes(true);
+        } else {
+          showToast(data.error || 'Không thể gỡ tin nhắn');
+        }
+      } catch (err) {
+        showToast('Lỗi khi gỡ tin nhắn');
+      }
     }
 
     // Neon Realtime live sync for Admin Dashboard
@@ -459,7 +1699,7 @@
       try {
         const res = await fetch('/api/realtime/sealed-queries');
         if (!res.ok) return;
-        const { url, sealedMeds, sealedLogs } = await res.json();
+        const { url, sealedMeds, sealedLogs, sealedNotes } = await res.json();
         if (!url || !sealedMeds || !sealedLogs) return;
 
         const rtClient = window.NeonRealtime.createRealtimeClient({ url });
@@ -477,16 +1717,60 @@
           if (error) return;
           if (status === 'live') {
             if (!initLogs) {
-              showToast('Bạn gái vừa bấm uống thuốc!');
+              showToast('Có cập nhật cữ thuốc mới!');
               loadAdminStatus();
             }
             initLogs = false;
           }
         });
+
+        if (sealedNotes) {
+          let initNotes = true;
+          rtClient.subscribe(sealedNotes).onChange(({ status, error }) => {
+            if (error) return;
+            if (status === 'live') {
+              if (!initNotes) {
+                const modal = document.getElementById('admin-notes-modal-backdrop');
+                const isOpen = modal && modal.classList.contains('open');
+                loadAdminNotes(isOpen);
+              }
+              initNotes = false;
+            }
+          });
+        }
       } catch (e) {
         console.warn('[Admin Realtime] Failed:', e.message);
       }
     }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      setupAdminKeypad();
+      setupHandlers();
+      await initAdminServiceWorker();
+      const isAuthed = checkAdminSession();
+      if (isAuthed) {
+        loadAdminStatus();
+        loadPinsConfig();
+        loadAdminNotes(false);
+      }
+      initAdminRealtime();
+
+      // Quiet polling check every 30s
+      setInterval(() => {
+        const modal = document.getElementById('admin-notes-modal-backdrop');
+        const isOpen = modal && modal.classList.contains('open');
+        loadAdminNotes(isOpen);
+      }, 30000);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        loadAdminStatus();
+        const modal = document.getElementById('admin-notes-modal-backdrop');
+        const isOpen = modal && modal.classList.contains('open');
+        loadAdminNotes(isOpen);
+      }
+    });
   </script>
 </body>
 </html>

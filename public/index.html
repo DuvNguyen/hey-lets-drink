@@ -14,7 +14,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="icon" type="image/png" href="/image/logo.png">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=11">
 </head>
 <body>
   <div class="app-container">
@@ -22,7 +22,7 @@
     <header class="app-header">
       <div class="brand-container">
         <img src="/image/logo.png" alt="Logo" class="app-brand-logo">
-        <div class="brand-title">Hey Let's Drink</div>
+        <div class="brand-title" id="app-brand-title">Hey Let's Drink</div>
       </div>
       <div class="header-actions">
         <div id="device-status" class="status-pill">
@@ -34,6 +34,7 @@
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
+          <span id="gear-unread-dot" class="gear-unread-dot" style="display: none;"></span>
         </button>
       </div>
     </header>
@@ -88,7 +89,6 @@
     <main id="tab-today" class="tab-panel active">
       <div class="section-header">
         <span class="section-title">Lịch Cần Uống Hôm Nay</span>
-        <span id="current-date-display" style="font-size: 12px; color: var(--text-muted);"></span>
       </div>
       <div id="today-medication-list" class="medication-list">
         <div class="loading-state">
@@ -258,6 +258,34 @@
           <button type="button" id="btn-close-settings" class="btn-secondary" style="padding: 4px 10px; font-size: 12px;">✕ Đóng</button>
         </div>
 
+        <!-- Shared Notes Entry Card -->
+        <div class="notes-entry-card" id="btn-open-notes" style="background: #F8FAFC; border: 1.5px solid #BFDBFE; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; cursor: pointer;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #EBF0FE; display: flex; align-items: center; justify-content: center; color: var(--sd-blue); position: relative; flex-shrink: 0;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span id="note-icon-dot" class="note-unread-dot" style="display: none;"></span>
+              </div>
+              <div>
+                <div style="font-weight: 700; font-size: 15px; color: var(--text-heading); display: flex; align-items: center; gap: 6px;">
+                  Note
+                  <span id="note-badge-unread" class="badge-new-note" style="display: none;">• Mới</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">
+                  Không gian riêng trao đổi, chia sẻ mỗi tuần (Thứ Bảy)
+                </p>
+              </div>
+            </div>
+            <div style="color: var(--sd-blue); font-size: 18px; font-weight: 700;">›</div>
+          </div>
+        </div>
+
         <!-- iOS Guide -->
         <div id="ios-guide" class="ios-guide-box" style="display: none;">
           <strong>Kích hoạt thông báo trên iPhone (iOS 16.4+):</strong>
@@ -328,7 +356,179 @@
             </code>
           </p>
         </div>
+
+        <!-- Session & Logout -->
+        <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle); padding-bottom: 28px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 12px; color: var(--text-muted);">Phiên đăng nhập:</span>
+            <span id="session-user-role" class="admin-badge" style="background: #EBF0FE; color: var(--sd-blue); font-size: 11px;">Đang tải...</span>
+          </div>
+
+          <!-- Admin Entry Button: only visible when role === 'admin' -->
+          <a href="/admin" id="btn-admin-dashboard-link" class="btn-primary" style="display: none; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin-bottom: 10px; text-decoration: none; font-weight: 600;">
+            Admin
+          </a>
+
+          <button type="button" id="btn-logout" class="btn-secondary" style="width: 100%; min-height: 42px; color: #DC2626; border-color: #FECACA; font-weight: 600;">
+            Đăng xuất
+          </button>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CHAT BOX NOTE ================= -->
+  <div id="notes-modal-backdrop" class="modal-backdrop">
+    <div class="notes-chat-sheet">
+      <!-- Chat Header -->
+      <div class="notes-chat-header">
+        <div class="bottom-sheet-handle" style="margin-bottom: 8px;"></div>
+        <div class="notes-chat-header-inner" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="chat-header-avatar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <div>
+              <div style="font-weight: 700; font-size: 16px; color: var(--text-heading); display: flex; align-items: center; gap: 6px;">
+                Note
+                <span id="chat-header-role" class="chat-my-role-badge">User</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button type="button" id="btn-toggle-fullscreen-notes" class="chat-close-btn chat-fullscreen-btn" title="Toàn màn hình" aria-label="Toàn màn hình">
+              <svg class="icon-expand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+              <svg class="icon-compress" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            </button>
+            <button type="button" id="btn-close-notes" class="chat-close-btn" aria-label="Đóng">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saturday Notice Ribbon -->
+      <div id="saturday-banner" class="chat-saturday-ribbon" style="display: none;">
+        Thứ Bảy — Thời điểm hai đứa cùng nhìn lại và chia sẻ tuần qua.
+      </div>
+
+      <!-- Chat Messages Scroll Area -->
+      <div id="notes-list-container" class="notes-chat-messages">
+        <div class="chat-loading-state">Đang tải tin nhắn...</div>
+      </div>
+
+      <!-- Chat Input Footer Bar -->
+      <div class="notes-chat-footer">
+        <div id="chat-edit-ribbon" class="chat-edit-ribbon" style="display: none;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Đang sửa tin nhắn</span>
+          </div>
+          <button type="button" id="btn-cancel-edit" class="chat-edit-cancel-btn">✕ Hủy</button>
+        </div>
+        <div class="chat-composer-wrap">
+          <textarea 
+            id="note-input-content" 
+            class="chat-input-textarea" 
+            placeholder="Nhập gì đó..." 
+            rows="1" 
+            maxlength="3000"></textarea>
+          <button type="button" id="btn-submit-note" class="chat-send-btn" disabled aria-label="Gửi">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dose Note Modal Bottom Sheet -->
+  <div id="take-note-modal-backdrop" class="modal-backdrop">
+    <div class="bottom-sheet">
+      <div class="bottom-sheet-handle"></div>
+      <div class="section-header" style="margin-bottom: 12px;">
+        <span class="section-title" id="take-note-title">Ghi Chú Cữ Thuốc</span>
+        <button type="button" id="btn-close-take-note" class="btn-secondary" style="padding: 4px 10px; font-size: 12px;">✕ Đóng</button>
+      </div>
+
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        Nhập ghi chú kèm theo khi xác nhận đã uống cữ thuốc:
+      </p>
+
+      <div class="form-group" style="margin-bottom: 14px;">
+        <input type="text" id="take-note-input" class="form-input" placeholder="Nhập ghi chú..." maxlength="100" autocomplete="off">
+      </div>
+
+      <button type="button" id="btn-confirm-take-with-note" class="btn-primary" style="width: 100%; min-height: 44px;">
+        Xác Nhận Đã Uống Kèm Ghi Chú
+      </button>
+    </div>
+  </div>
+
+  <!-- PIN Lock Screen Overlay with Custom Keypad (MoMo style / SDv26 design) -->
+  <div id="pin-lock-overlay" class="pin-lock-overlay">
+    <div class="pin-lock-container">
+      <div class="pin-lock-header">
+        <img src="/image/logo.png" alt="Logo" class="pin-app-logo">
+        <h2 class="pin-app-title">Hey Let's Drink</h2>
+        <p class="pin-app-subtitle">Nhập mã PIN để tiếp tục</p>
+      </div>
+
+      <!-- PIN Indicator Dots Box -->
+      <div class="pin-dots-container" id="pin-dots-wrap">
+        <span class="pin-dot" data-idx="0"></span>
+        <span class="pin-dot" data-idx="1"></span>
+        <span class="pin-dot" data-idx="2"></span>
+        <span class="pin-dot" data-idx="3"></span>
+      </div>
+      <div id="pin-error" class="pin-error-text"></div>
+
+      <!-- Custom Numeric Keypad -->
+      <div class="pin-keypad" id="pin-keypad">
+        <button type="button" class="pin-key" data-key="1">1</button>
+        <button type="button" class="pin-key" data-key="2">2</button>
+        <button type="button" class="pin-key" data-key="3">3</button>
+        <button type="button" class="pin-key" data-key="4">4</button>
+        <button type="button" class="pin-key" data-key="5">5</button>
+        <button type="button" class="pin-key" data-key="6">6</button>
+        <button type="button" class="pin-key" data-key="7">7</button>
+        <button type="button" class="pin-key" data-key="8">8</button>
+        <button type="button" class="pin-key" data-key="9">9</button>
+        <button type="button" class="pin-key pin-key-fn" data-action="clear">C</button>
+        <button type="button" class="pin-key" data-key="0">0</button>
+        <button type="button" class="pin-key pin-key-fn" data-action="backspace" aria-label="Xóa">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+            <line x1="18" y1="9" x2="12" y2="15"></line>
+            <line x1="12" y1="9" x2="18" y2="15"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Primary Action Button "Tiếp" -->
+      <button type="button" id="btn-pin-submit" class="btn-primary pin-btn-next" disabled>
+        Tiếp
+      </button>
     </div>
   </div>
 
@@ -475,6 +675,6 @@
   <div id="app-toast" class="toast-notification"></div>
 
   <script src="/neon-realtime.js"></script>
-  <script src="/app.js"></script>
+  <script src="/app.js?v=11"></script>
 </body>
 </html>
