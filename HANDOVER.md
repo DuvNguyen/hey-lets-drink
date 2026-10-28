@@ -147,6 +147,16 @@ flowchart TD
   - Khi **Duyen** (PIN `9230` - User/Girlfriend) đăng nhập: hiển thị **`Hi, Duyen`**.
   - Tự động hiển thị ngay lập tức khi mở app dựa trên phiên lưu trữ `localStorage`.
 
+### 4.6. Granular Notification Routing (Vi 7777 vs Duyen 9230)
+- **Tài khoản Vi (7777 - Admin)**:
+  - Truy cập toàn bộ hệ thống (`/` và `/admin`).
+  - **Lời nhắn cữ thuốc từ Duyên (💬)**: Mặc định **BẬT** (nhận thông báo màn hình khóa ngay khi Duyên uống thuốc có kèm ghi chú).
+  - **Chuông nhắc cữ uống thuốc (⏰)**: Mặc định **TẮT** (vì Vi không phải người uống thuốc, không bị làm phiền bởi cữ thuốc định kỳ).
+  - Có 2 công tắc riêng biệt trong Cài đặt ⚙️ trên cả app chính lẫn trang `/admin` để chủ động bật/tắt theo ý muốn.
+- **Tài khoản Duyen (9230 - User)**:
+  - Nhận chuông nhắc đúng giờ cữ thuốc và chuông cảnh báo trễ cữ Anki (10p, 15p, 17p).
+  - Tuyệt đối **không** nhận thông báo tin nhắn từ chính mình gửi khi uống thuốc.
+
 ---
 
 ## 6. Verification Checklist

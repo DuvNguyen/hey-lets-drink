@@ -118,23 +118,25 @@ async function dispatchPushToSubscriptions(subs, payload) {
   return { sent, failed };
 }
 
-// Push to Girlfriend devices only (for medication reminders, Anki escalations, nudges)
+// Push medication reminders, Anki escalations, nudges
+// Only sent to subscriptions with notifyDoseReminders === true (Default: true for girlfriend, false for admin)
 async function sendPushToGirlfriend(payload) {
   const subscriptions = await db.getSubscriptions();
-  const targets = subscriptions.filter(s => s.enabled !== false && (s.role === 'girlfriend' || !s.role));
+  const targets = subscriptions.filter(s => s.enabled !== false && s.notifyDoseReminders === true);
   if (!targets.length) {
-    console.log('[Push Girlfriend] No active girlfriend subscriptions found.');
+    console.log('[Push Reminders] No active subscriptions for dose reminders found.');
     return { sent: 0, failed: 0 };
   }
   return await dispatchPushToSubscriptions(targets, payload);
 }
 
-// Push to Admin / Boyfriend devices only (for girlfriend's take + note messages)
+// Push girlfriend's take + note messages (💬)
+// Sent strictly to Vi (admin) with notifyDoseNotes === true. Girlfriend NEVER receives notes from herself!
 async function sendPushToAdmin(payload) {
   const subscriptions = await db.getSubscriptions();
-  const targets = subscriptions.filter(s => s.enabled !== false && s.role === 'admin');
+  const targets = subscriptions.filter(s => s.enabled !== false && s.role !== 'girlfriend' && s.notifyDoseNotes === true);
   if (!targets.length) {
-    console.log('[Push Admin] No active admin subscriptions found.');
+    console.log('[Push Admin Notes] No active admin subscriptions for dose notes found.');
     return { sent: 0, failed: 0 };
   }
   return await dispatchPushToSubscriptions(targets, payload);
@@ -516,7 +518,7 @@ app.post('/api/subscribe', async (req, res) => {
   res.status(201).json({ status: 'subscribed', totalDevices: subscriptions.length });
 });
 
-// 2.5. Check current device subscription status
+// 2.5. Check current device subscription status & preferences
 app.get('/api/subscription/status', async (req, res) => {
   const { endpoint } = req.query;
   if (!endpoint) return res.status(400).json({ error: 'Endpoint is required' });
@@ -524,7 +526,10 @@ app.get('/api/subscription/status', async (req, res) => {
   const sub = subscriptions.find(s => s.endpoint === endpoint);
   res.json({
     subscribed: !!sub,
-    enabled: sub ? sub.enabled !== false : false
+    enabled: sub ? sub.enabled !== false : false,
+    role: sub ? (sub.role || 'girlfriend') : 'girlfriend',
+    notifyDoseReminders: sub ? sub.notifyDoseReminders : true,
+    notifyDoseNotes: sub ? sub.notifyDoseNotes : false
   });
 });
 
@@ -535,6 +540,14 @@ app.post('/api/subscription/toggle', async (req, res) => {
   const isEnabled = enabled !== false;
   await db.updateSubscriptionEnabled(endpoint, isEnabled);
   res.json({ success: true, endpoint, enabled: isEnabled });
+});
+
+// 2.7. Update granular notification preferences (Dose Reminders & Dose Notes)
+app.post('/api/subscription/preferences', async (req, res) => {
+  const { endpoint, notifyDoseReminders, notifyDoseNotes } = req.body || {};
+  if (!endpoint) return res.status(400).json({ error: 'Endpoint is required' });
+  await db.updateSubscriptionPreferences(endpoint, { notifyDoseReminders, notifyDoseNotes });
+  res.json({ success: true, notifyDoseReminders, notifyDoseNotes });
 });
 
 // 3. List medications + Today status + Hero metric stats

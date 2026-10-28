@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Quản Trị — V&D</title>
   <link rel="icon" type="image/png" href="/image/logo.png">
-  <link rel="stylesheet" href="/style.css?v=13">
+  <link rel="stylesheet" href="/style.css?v=14">
   <style>
     .admin-header-row {
       display: flex;
@@ -329,19 +329,36 @@
           </div>
         </div>
 
-        <!-- Notification Settings -->
-        <div class="device-card" style="margin-bottom: 0;">
+        <!-- Admin-specific Notification Controls for Vi (7777) -->
+        <div class="device-card" style="margin-bottom: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="flex: 1; padding-right: 14px;">
               <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">
-                Thông báo trên thiết bị này
+                Lời nhắn cữ thuốc từ Duyên 💬
               </div>
-              <p id="admin-device-noti-desc" style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
-                Nhận thông báo khi có lượt uống thuốc hoặc ghi chú mới.
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
+                Nhận thông báo khi Duyên uống cữ thuốc có gửi kèm tin nhắn/ghi chú.
               </p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" id="toggle-admin-noti">
+              <input type="checkbox" id="toggle-admin-notes-pref" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="device-card" style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1; padding-right: 14px;">
+              <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">
+                Chuông nhắc cữ uống thuốc ⏰
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
+                Nhắc giờ uống thuốc và trễ cữ (Tắt vì bạn không phải người uống).
+              </p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-admin-reminders-pref">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -914,15 +931,14 @@
             }
           } catch (_) {}
 
-          if (toggleAdminNoti) {
-            toggleAdminNoti.checked = isEnabled;
-            toggleAdminNoti.disabled = false;
-          }
+          const toggleAdminNotesPref = document.getElementById('toggle-admin-notes-pref');
+          const toggleAdminRemindersPref = document.getElementById('toggle-admin-reminders-pref');
 
-          if (isEnabled) {
-            adminDeviceNotiDesc.textContent = 'Đang nhận thông báo khi có lượt uống thuốc hoặc ghi chú mới.';
-          } else {
-            adminDeviceNotiDesc.textContent = 'Đã tạm tắt nhận thông báo trên thiết bị này.';
+          if (toggleAdminNotesPref) {
+            toggleAdminNotesPref.checked = (data && data.notifyDoseNotes !== undefined) ? data.notifyDoseNotes : true;
+          }
+          if (toggleAdminRemindersPref) {
+            toggleAdminRemindersPref.checked = (data && data.notifyDoseReminders !== undefined) ? data.notifyDoseReminders : false;
           }
 
           // Ensure subscription role is admin
@@ -1146,46 +1162,57 @@
         }
       });
 
-      // Toggle Admin Push
-      if (toggleAdminNoti) {
-        toggleAdminNoti.addEventListener('change', async (e) => {
+      // Toggle Admin Granular Notification Preferences
+      const toggleAdminNotesPref = document.getElementById('toggle-admin-notes-pref');
+      const toggleAdminRemindersPref = document.getElementById('toggle-admin-reminders-pref');
+
+      if (toggleAdminNotesPref) {
+        toggleAdminNotesPref.addEventListener('change', async (e) => {
           const isChecked = e.target.checked;
           if (!adminSwReg) {
             showToast('Service Worker chưa sẵn sàng.');
             e.target.checked = !isChecked;
             return;
           }
-
           try {
             const sub = await adminSwReg.pushManager.getSubscription();
             if (!sub || Notification.permission !== 'granted') {
-              if (isChecked) {
-                await enableAdminPush();
-              } else {
-                e.target.checked = false;
-              }
+              if (isChecked) await enableAdminPush();
               return;
             }
-
-            // Update existing subscription enabled status
-            const res = await fetch('/api/subscription/toggle', {
+            await fetch('/api/subscription/preferences', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ endpoint: sub.endpoint, enabled: isChecked })
+              body: JSON.stringify({ endpoint: sub.endpoint, notifyDoseNotes: isChecked })
             });
+            showToast(isChecked ? 'Đã bật nhận lời nhắn cữ thuốc từ Duyên 💬' : 'Đã tắt nhận lời nhắn cữ thuốc');
+          } catch (err) {
+            e.target.checked = !isChecked;
+            showToast('Lỗi: ' + err.message);
+          }
+        });
+      }
 
-            if (res.ok) {
-              if (isChecked) {
-                showToast('Đã bật nhận thông báo Admin trên thiết bị này');
-                adminDeviceNotiDesc.textContent = 'Đang nhận thông báo khi có lượt uống thuốc hoặc ghi chú mới.';
-              } else {
-                showToast('Đã tạm tắt thông báo trên thiết bị này');
-                adminDeviceNotiDesc.textContent = 'Đã tạm tắt nhận thông báo trên thiết bị này.';
-              }
-            } else {
-              e.target.checked = !isChecked;
-              showToast('Không thể cập nhật trạng thái thông báo');
+      if (toggleAdminRemindersPref) {
+        toggleAdminRemindersPref.addEventListener('change', async (e) => {
+          const isChecked = e.target.checked;
+          if (!adminSwReg) {
+            showToast('Service Worker chưa sẵn sàng.');
+            e.target.checked = !isChecked;
+            return;
+          }
+          try {
+            const sub = await adminSwReg.pushManager.getSubscription();
+            if (!sub || Notification.permission !== 'granted') {
+              if (isChecked) await enableAdminPush();
+              return;
             }
+            await fetch('/api/subscription/preferences', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ endpoint: sub.endpoint, notifyDoseReminders: isChecked })
+            });
+            showToast(isChecked ? 'Đã bật chuông nhắc cữ uống thuốc ⏰' : 'Đã tắt chuông nhắc cữ uống thuốc');
           } catch (err) {
             e.target.checked = !isChecked;
             showToast('Lỗi: ' + err.message);

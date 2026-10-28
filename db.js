@@ -142,6 +142,12 @@ async function initDb() {
     await sql`
       ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'girlfriend';
     `;
+    await sql`
+      ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS notify_dose_reminders BOOLEAN DEFAULT NULL;
+    `;
+    await sql`
+      ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS notify_dose_notes BOOLEAN DEFAULT NULL;
+    `;
 
     // Ensure 'note' column exists in logs
     await sql`
@@ -365,14 +371,26 @@ async function getSubscriptions() {
       subscribedAt: r.subscribed_at,
       deviceInfo: r.device_info,
       enabled: r.enabled !== false,
-      role: r.role || 'girlfriend'
+      role: r.role || 'girlfriend',
+      notifyDoseReminders: r.notify_dose_reminders !== null
+        ? r.notify_dose_reminders
+        : (r.role !== 'admin'),
+      notifyDoseNotes: r.notify_dose_notes !== null
+        ? r.notify_dose_notes
+        : (r.role === 'admin')
     }));
   }
   const subs = readJSON(SUBS_FILE, []);
   return subs.map(s => ({
     ...s,
     enabled: s.enabled !== false,
-    role: s.role || 'girlfriend'
+    role: s.role || 'girlfriend',
+    notifyDoseReminders: s.notifyDoseReminders !== undefined
+      ? s.notifyDoseReminders
+      : (s.role !== 'admin'),
+    notifyDoseNotes: s.notifyDoseNotes !== undefined
+      ? s.notifyDoseNotes
+      : (s.role === 'admin')
   }));
 }
 
@@ -399,6 +417,43 @@ async function addSubscription(sub, deviceInfo = '', role = 'girlfriend') {
   }
   writeJSON(SUBS_FILE, subs);
   return sub;
+}
+
+async function updateSubscriptionPreferences(endpoint, prefs = {}) {
+  if (!endpoint) return false;
+  const { notifyDoseReminders, notifyDoseNotes } = prefs;
+  if (sql) {
+    await initDb();
+    if (notifyDoseReminders !== undefined && notifyDoseNotes !== undefined) {
+      await sql`
+        UPDATE subscriptions
+        SET notify_dose_reminders = ${notifyDoseReminders}, notify_dose_notes = ${notifyDoseNotes}
+        WHERE endpoint = ${endpoint};
+      `;
+    } else if (notifyDoseReminders !== undefined) {
+      await sql`
+        UPDATE subscriptions
+        SET notify_dose_reminders = ${notifyDoseReminders}
+        WHERE endpoint = ${endpoint};
+      `;
+    } else if (notifyDoseNotes !== undefined) {
+      await sql`
+        UPDATE subscriptions
+        SET notify_dose_notes = ${notifyDoseNotes}
+        WHERE endpoint = ${endpoint};
+      `;
+    }
+    return true;
+  }
+  const subs = readJSON(SUBS_FILE, []);
+  const found = subs.find(s => s.endpoint === endpoint);
+  if (found) {
+    if (notifyDoseReminders !== undefined) found.notifyDoseReminders = notifyDoseReminders;
+    if (notifyDoseNotes !== undefined) found.notifyDoseNotes = notifyDoseNotes;
+    writeJSON(SUBS_FILE, subs);
+    return true;
+  }
+  return false;
 }
 
 async function updateSubscriptionRole(endpoint, role) {
@@ -760,6 +815,7 @@ module.exports = {
   addSubscription,
   updateSubscriptionEnabled,
   updateSubscriptionRole,
+  updateSubscriptionPreferences,
   removeSubscription,
   getSettings,
   updateSettings,

@@ -14,7 +14,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="icon" type="image/png" href="/image/logo.png">
-  <link rel="stylesheet" href="/style.css?v=13">
+  <link rel="stylesheet" href="/style.css?v=14">
 </head>
 <body>
   <div class="app-container">
@@ -303,12 +303,51 @@
           <button id="btn-enable-noti" class="permission-btn">Bật thông báo ngay</button>
         </div>
 
-        <!-- Device Notification Toggle (Scope: This device only) -->
+        <!-- Admin-specific Notification Controls for 7777 (Vi) -->
+        <div id="admin-noti-controls" style="display: none;">
+          <!-- 1. Dose message note notification (Default: ON for Vi) -->
+          <div class="device-card" style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="flex: 1; padding-right: 14px;">
+                <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">
+                  Lời nhắn cữ thuốc từ Duyên 💬
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
+                  Nhận thông báo khi Duyên uống thuốc và có gửi kèm tin nhắn/ghi chú.
+                </p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-admin-notes" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 2. Dose due reminders (Default: OFF for Vi) -->
+          <div class="device-card" style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="flex: 1; padding-right: 14px;">
+                <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">
+                  Chuông nhắc cữ uống thuốc ⏰
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
+                  Nhắc giờ uống thuốc và trễ cữ (Tắt vì bạn không phải người uống).
+                </p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-admin-reminders">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Girlfriend / User Notification Control for 9230 (Duyen) -->
         <div class="device-card" id="card-device-noti">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="flex: 1; padding-right: 14px;">
               <div style="font-weight: 600; font-size: 14px; color: var(--text-heading); margin-bottom: 2px;">
-                Thông báo trên thiết bị này
+                Nhắc cữ uống thuốc ⏰
               </div>
               <p id="device-noti-desc" style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
                 Nhận thông báo và chuông nhắc khi đến cữ uống thuốc.
@@ -667,6 +706,6 @@
   <div id="app-toast" class="toast-notification"></div>
 
   <script src="/neon-realtime.js"></script>
-  <script src="/app.js?v=13"></script>
+  <script src="/app.js?v=14"></script>
 </body>
 </html>

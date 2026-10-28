@@ -231,26 +231,43 @@ async function checkSubscriptionStatus() {
   const toggleDeviceNoti = document.getElementById('toggle-device-noti');
   const deviceNotiDesc = document.getElementById('device-noti-desc');
   const cardDeviceNoti = document.getElementById('card-device-noti');
+  const adminNotiControls = document.getElementById('admin-noti-controls');
+  const toggleAdminNotes = document.getElementById('toggle-admin-notes');
+  const toggleAdminReminders = document.getElementById('toggle-admin-reminders');
+  const role = getCurrentUserRole();
 
   try {
     const subscription = await swRegistration.pushManager.getSubscription();
     if (subscription && Notification.permission === 'granted') {
       let isEnabled = true;
+      let notifyDoseReminders = (role !== 'admin');
+      let notifyDoseNotes = (role === 'admin');
+
       try {
         const res = await fetch(`/api/subscription/status?endpoint=${encodeURIComponent(subscription.endpoint)}`);
         if (res.ok) {
           const data = await res.json();
           isEnabled = data.enabled !== false;
+          if (data.notifyDoseReminders !== undefined) notifyDoseReminders = data.notifyDoseReminders;
+          if (data.notifyDoseNotes !== undefined) notifyDoseNotes = data.notifyDoseNotes;
         }
       } catch (e) {
         console.warn('Error checking subscription status from server:', e);
       }
 
-      if (toggleDeviceNoti) {
-        toggleDeviceNoti.checked = isEnabled;
-        toggleDeviceNoti.disabled = false;
+      if (role === 'admin') {
+        if (adminNotiControls) adminNotiControls.style.display = 'block';
+        if (cardDeviceNoti) cardDeviceNoti.style.display = 'none';
+        if (toggleAdminNotes) toggleAdminNotes.checked = notifyDoseNotes;
+        if (toggleAdminReminders) toggleAdminReminders.checked = notifyDoseReminders;
+      } else {
+        if (adminNotiControls) adminNotiControls.style.display = 'none';
+        if (cardDeviceNoti) cardDeviceNoti.style.display = 'block';
+        if (toggleDeviceNoti) {
+          toggleDeviceNoti.checked = isEnabled;
+          toggleDeviceNoti.disabled = false;
+        }
       }
-      if (cardDeviceNoti) cardDeviceNoti.style.display = 'block';
 
       if (isEnabled) {
         updateStatus(true, 'Đã bật thông báo');
@@ -262,9 +279,16 @@ async function checkSubscriptionStatus() {
       permissionBanner.style.display = 'none';
     } else {
       updateStatus(false, 'Chưa bật thông báo');
-      if (toggleDeviceNoti) {
-        toggleDeviceNoti.checked = false;
-        toggleDeviceNoti.disabled = true;
+      if (role === 'admin') {
+        if (adminNotiControls) adminNotiControls.style.display = 'block';
+        if (cardDeviceNoti) cardDeviceNoti.style.display = 'none';
+      } else {
+        if (adminNotiControls) adminNotiControls.style.display = 'none';
+        if (cardDeviceNoti) cardDeviceNoti.style.display = 'block';
+        if (toggleDeviceNoti) {
+          toggleDeviceNoti.checked = false;
+          toggleDeviceNoti.disabled = true;
+        }
       }
       if (deviceNotiDesc) deviceNotiDesc.textContent = 'Cần bấm nút "Bật thông báo ngay" bên dưới để kích hoạt.';
       permissionBanner.style.display = 'flex';
@@ -308,7 +332,17 @@ function checkAuthSession() {
         if (adminLink) {
           adminLink.style.display = (session.role === 'admin') ? 'flex' : 'none';
         }
+        const adminNotiControls = document.getElementById('admin-noti-controls');
+        const cardDeviceNoti = document.getElementById('card-device-noti');
+        if (session.role === 'admin') {
+          if (adminNotiControls) adminNotiControls.style.display = 'block';
+          if (cardDeviceNoti) cardDeviceNoti.style.display = 'none';
+        } else {
+          if (adminNotiControls) adminNotiControls.style.display = 'none';
+          if (cardDeviceNoti) cardDeviceNoti.style.display = 'block';
+        }
         updateBrandGreeting(session.role, session.displayName);
+        checkSubscriptionStatus();
         return session;
       }
     } catch (_) {
@@ -396,7 +430,17 @@ async function handlePinSubmit() {
       if (adminLink) {
         adminLink.style.display = (data.role === 'admin') ? 'flex' : 'none';
       }
+      const adminNotiControls = document.getElementById('admin-noti-controls');
+      const cardDeviceNoti = document.getElementById('card-device-noti');
+      if (data.role === 'admin') {
+        if (adminNotiControls) adminNotiControls.style.display = 'block';
+        if (cardDeviceNoti) cardDeviceNoti.style.display = 'none';
+      } else {
+        if (adminNotiControls) adminNotiControls.style.display = 'none';
+        if (cardDeviceNoti) cardDeviceNoti.style.display = 'block';
+      }
       updateBrandGreeting(data.role, data.displayName);
+      checkSubscriptionStatus();
 
       showToast(`Xin chào ${roleLabel}!`, 'success');
       resetPinState();
@@ -1510,6 +1554,64 @@ function setupEventHandlers() {
         }
       } catch (err) {
         console.error('Toggle error:', err);
+        showToast('Lỗi cập nhật: ' + err.message, 'error');
+        e.target.checked = !isChecked;
+      }
+    });
+  }
+
+  // Admin Granular Notification Toggles (Vi - PIN 7777)
+  const toggleAdminNotes = document.getElementById('toggle-admin-notes');
+  const toggleAdminReminders = document.getElementById('toggle-admin-reminders');
+
+  if (toggleAdminNotes) {
+    toggleAdminNotes.addEventListener('change', async (e) => {
+      const isChecked = e.target.checked;
+      if (!swRegistration) {
+        showToast('Service Worker chưa sẵn sàng.', 'warning');
+        e.target.checked = !isChecked;
+        return;
+      }
+      try {
+        const sub = await swRegistration.pushManager.getSubscription();
+        if (!sub) return;
+        await fetch('/api/subscription/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            endpoint: sub.endpoint,
+            notifyDoseNotes: isChecked
+          })
+        });
+        showToast(isChecked ? 'Đã bật nhận lời nhắn cữ thuốc từ Duyên 💬' : 'Đã tắt nhận lời nhắn cữ thuốc', 'info');
+      } catch (err) {
+        showToast('Lỗi cập nhật: ' + err.message, 'error');
+        e.target.checked = !isChecked;
+      }
+    });
+  }
+
+  if (toggleAdminReminders) {
+    toggleAdminReminders.addEventListener('change', async (e) => {
+      const isChecked = e.target.checked;
+      if (!swRegistration) {
+        showToast('Service Worker chưa sẵn sàng.', 'warning');
+        e.target.checked = !isChecked;
+        return;
+      }
+      try {
+        const sub = await swRegistration.pushManager.getSubscription();
+        if (!sub) return;
+        await fetch('/api/subscription/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            endpoint: sub.endpoint,
+            notifyDoseReminders: isChecked
+          })
+        });
+        showToast(isChecked ? 'Đã bật chuông nhắc cữ uống thuốc ⏰' : 'Đã tắt chuông nhắc cữ uống thuốc', 'info');
+      } catch (err) {
         showToast('Lỗi cập nhật: ' + err.message, 'error');
         e.target.checked = !isChecked;
       }
