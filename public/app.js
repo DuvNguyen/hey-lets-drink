@@ -283,7 +283,7 @@ function updateBrandGreeting(role, displayName) {
   const brandTitle = document.getElementById('app-brand-title');
   if (!brandTitle) return;
   if (!role && !displayName) {
-    brandTitle.textContent = "Hey Let's Drink";
+    brandTitle.textContent = "V&D";
     return;
   }
   const name = (role === 'admin' || displayName === 'Vi' || displayName === 'Vĩ') ? 'Vi' : 'Duyen';

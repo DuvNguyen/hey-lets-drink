@@ -1,7 +1,7 @@
 {
-  "name": "Hey Let's Drink",
-  "short_name": "Drink & Meds",
-  "description": "Nhắc lịch uống thuốc tối giản và chuẩn xác",
+  "name": "V&D",
+  "short_name": "V&D",
+  "description": "V&D Daily",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

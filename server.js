@@ -965,7 +965,7 @@ Respond ONLY with valid JSON. No conversational text or markdown code fences.`;
 app.post('/api/test-push', async (req, res) => {
   const currentTime = getCurrentTimeString();
   const payload = {
-    title: "Kiểm tra thông báo: Hey Let's Drink",
+    title: "Kiểm tra thông báo: V&D",
     body: `Thiết bị đã kết nối thành công lúc ${currentTime}. Hệ thống sẽ nhắc lịch đúng giờ.`,
     tag: 'test-push',
     data: { url: '/' }

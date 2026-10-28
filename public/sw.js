@@ -12,7 +12,7 @@ self.addEventListener('activate', (event) => {
 // Listen for Push event from server
 self.addEventListener('push', (event) => {
   let data = {
-    title: "Hey Let's Drink",
+    title: "V&D",
     body: 'Đến giờ uống thuốc theo lịch hẹn.',
     tag: 'med-reminder',
     data: { url: '/' }

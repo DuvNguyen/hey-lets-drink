@@ -1,4 +1,4 @@
-# Hey Let's Drink — Project Handover Document
+# V&D — Project Handover Document
 
 > **Last Updated:** 2026-10-28  
 > **Environment:** Node.js (v22+), Express, Neon Lakebase PostgreSQL, Web Push (VAPID / Apple APNs / Google FCM)  
@@ -142,7 +142,7 @@ flowchart TD
   - **Chỉ báo thông minh**: Hiển thị chấm xanh tinh tế (`• Mới`) trên biểu tượng bánh răng và hàng menu khi có tin nhắn chưa đọc từ đối phương; tự động đánh dấu đã đọc khi người nhận mở xem.
 
 ### 4.5. Personalized Dynamic Header Greeting
-- Thanh tiêu đề trang chủ tự động đổi từ `Hey Let's Drink` thành lời chào cá nhân hóa theo vai trò đăng nhập:
+- Thanh tiêu đề trang chủ tự động đổi từ `V&D` thành lời chào cá nhân hóa theo vai trò đăng nhập:
   - Khi **Vi** (PIN `7777` - Admin) đăng nhập: hiển thị **`Hi, Vi`**.
   - Khi **Duyen** (PIN `9230` - User/Girlfriend) đăng nhập: hiển thị **`Hi, Duyen`**.
   - Tự động hiển thị ngay lập tức khi mở app dựa trên phiên lưu trữ `localStorage`.
